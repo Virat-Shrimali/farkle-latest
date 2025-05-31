@@ -1,4 +1,4 @@
-import useState from 'react';
+import {useState} from 'react';
 import './index.css';
 
 const MAX_ROLLS = 3;
