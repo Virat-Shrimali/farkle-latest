@@ -66,7 +66,7 @@ function calculateScore(dice: number[]): number {
   return score;
 }
 
-const Dice = ({ value, locked, onClick }: { value: number; locked: boolean; onClick: () => void }) => (
+const Dice = ({ value, locked, onClick }: { value: number; locked: boolean; onClick?: () => void }) => (
   <button
     onClick={onClick}
     style={{
@@ -78,8 +78,9 @@ const Dice = ({ value, locked, onClick }: { value: number; locked: boolean; onCl
       fontWeight: 'bold',
       border: '2px solid black',
       backgroundColor: locked ? '#4ade80' : 'white',
-      cursor: 'pointer'
+      cursor: onClick ? 'pointer' : 'default'
     }}
+    disabled={!onClick}
   >
     {value}
   </button>
@@ -164,6 +165,8 @@ export default function App() {
       fontFamily: 'Arial, sans-serif'
     }}>
       <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1rem' }}>🎲 Farkle Game</h1>
+
+      {/* Main Dice */}
       <div style={{
         display: 'flex',
         justifyContent: 'center',
@@ -176,9 +179,26 @@ export default function App() {
           </span>
         ))}
       </div>
+
+      {/* Locked Dice Display */}
+      <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginTop: '1rem' }}>Locked Dice</h2>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        flexWrap: 'wrap',
+        marginBottom: '1rem'
+      }}>
+        {dice.map((value, idx) => (
+          locked[idx] && (
+            <Dice key={`locked-${idx}`} value={value} locked={true} />
+          )
+        ))}
+      </div>
+
       <p style={{ fontSize: '1.125rem' }}>Rolls this turn: {rolls} / {MAX_ROLLS}</p>
       <p style={{ fontSize: '1.125rem', fontWeight: '600' }}>Turn Score: {turnScore}</p>
       <p style={{ fontSize: '1.125rem', fontWeight: 'bold', color: '#15803d' }}>Total Score: {totalScore}</p>
+
       <div style={{ marginTop: '1.5rem' }}>
         <button
           onClick={rollDice}
