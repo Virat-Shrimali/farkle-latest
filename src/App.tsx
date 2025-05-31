@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import {useState} from 'react';
 import './index.css';
 
 const MAX_ROLLS = 3;
@@ -89,8 +89,8 @@ const Dice = ({
 }) => (
   <button
     onClick={onClick}
-    className={`m-2 w-14 h-14 rounded-lg text-2xl font-bold border-4 transition-transform transform hover:scale-105 shadow-lg ${
-      locked ? 'bg-green-300 border-green-600' : 'bg-white border-pink-400'
+    className={`m-2 w-14 h-14 rounded-lg text-2xl font-bold border-2 ${
+      locked ? 'bg-green-400' : 'bg-white'
     }`}
   >
     {value}
@@ -151,8 +151,8 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-100 to-pink-200 text-center p-6">
-      <h1 className="text-4xl font-extrabold text-purple-700 mb-6">🎲 Farkle Game</h1>
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-blue-100 text-center p-6">
+      <h1 className="text-3xl font-bold mb-4">🎲 Farkle Game</h1>
       <div className="flex justify-center flex-wrap mb-4">
         {dice.map((value, idx) => (
           <span key={idx}>
@@ -164,31 +164,29 @@ export default function App() {
           </span>
         ))}
       </div>
-      <p className="text-lg text-pink-600 font-semibold mb-2">
+      <p className="text-lg">
         Rolls this turn: {rolls} / {MAX_ROLLS}
       </p>
-      <p className="text-lg font-bold text-rose-700 mb-1">
-        Turn Score: {turnScore}
-      </p>
-      <p className="text-lg font-bold text-green-700 mb-4">
+      <p className="text-lg font-semibold">Turn Score: {turnScore}</p>
+      <p className="text-lg font-bold text-green-700">
         Total Score: {totalScore}
       </p>
       <div className="mt-6 space-x-4">
         <button
-          className="px-4 py-2 bg-sky-400 text-white font-semibold rounded-xl hover:bg-sky-500 shadow-md"
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           onClick={rollDice}
           disabled={rolls >= MAX_ROLLS}
         >
           Roll Dice
         </button>
         <button
-          className="px-4 py-2 bg-green-400 text-white font-semibold rounded-xl hover:bg-green-500 shadow-md"
+          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
           onClick={endTurn}
         >
           End Turn
         </button>
         <button
-          className="px-4 py-2 bg-rose-400 text-white font-semibold rounded-xl hover:bg-rose-500 shadow-md"
+          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
           onClick={resetTurn}
         >
           Reset Turn
