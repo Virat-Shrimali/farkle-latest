@@ -2,6 +2,59 @@ import { useState } from 'react';
 import './index.css';
 
 const MAX_ROLLS = 3;
+// Input: dice is an array of 6 dice, e.g. [1,1,5,1,6,6]
+
+function calculateScoreAndCheckAllDiceScore(dice: number[]) {
+  // Count frequencies of each die value
+  const counts: Record<number, number> = {};
+  for (const die of dice) {
+    counts[die] = (counts[die] || 0) + 1;
+  }
+
+  let totalScore = 0;
+  let scoringDiceCount = 0;
+
+  // Check triplets or more
+  for (const [dieStr, count] of Object.entries(counts)) {
+    const die = Number(dieStr);
+
+    if (count >= 3) {
+      // Score for triples and beyond:
+      // Typically: triple 1s = 1000, triple others = die*100
+      if (die === 1) {
+        totalScore += 300 * Math.pow(2, count - 3); // doubles for more than triple (optional rule)
+      } else {
+        totalScore += die * 100 * Math.pow(2, count - 3);
+      }
+      scoringDiceCount += count; // all these dice count as scoring
+    }
+  }
+
+  // After scoring sets, count leftover singles that score
+  for (const [dieStr, count] of Object.entries(counts)) {
+    const die = Number(dieStr);
+    const leftover = count % 3;
+
+    // Singles scoring for 1 and 5
+    if (die === 1) {
+      totalScore += 100 * leftover;
+      scoringDiceCount += leftover;
+    } else if (die === 5) {
+      totalScore += 50 * leftover;
+      scoringDiceCount += leftover;
+    }
+    // leftover 2,3,4,6 do not score
+  }
+
+  // Now check if scoringDiceCount === total dice length → all dice contribute to scoring
+  const allDiceScoring = (scoringDiceCount === dice.length);
+
+  return {
+    totalScore,
+    allDiceScoring,
+  };
+}
+
 
 const getSubsets = (arr: number[]): number[][] => {
   const result: number[][] = [];
@@ -173,23 +226,24 @@ export default function App() {
 
   const rollDice = () => {
     // 1) If all six dice are locked AND all locked dice score, trigger Hot Dice
-    if (locked.every(l => l)) {
-      const lockedVals = dice.filter((_, i) => locked[i]);
-      const scoringCount = countScoringDice(lockedVals);
-      if (scoringCount.count === 6) {
-        alert(
-          `🔥 Hot dice! You had all six locked and scoring: [${lockedVals.join(
-            ', '
-          )}]\nRolling 6 fresh dice...`
-        );
-        const freshDice = Array.from({ length: 6 }, () => Math.ceil(Math.random() * 6));
-        setLocked(Array(6).fill(false));   // unlock all for new roll
-        setHasLockedThisTurn(false);
-        setDice(freshDice);
-        setTurnScore(calculateScore(freshDice));
-        return;
-      }
-    } 
+    // if (locked.every(l => l)) {
+    //   const lockedVals = dice.filter((_, i) => locked[i]);
+    //   const scoringCount = countScoringDice(lockedVals);
+      
+    //   if (scoringCount.count === 6) {
+    //     alert(
+    //       `🔥 Hot dice! You had all six locked and scoring: [${lockedVals.join(
+    //         ', '
+    //       )}]\nRolling 6 fresh dice...`
+    //     );
+    //     const freshDice = Array.from({ length: 6 }, () => Math.ceil(Math.random() * 6));
+    //     setLocked(Array(6).fill(false));   // unlock all for new roll
+    //     setHasLockedThisTurn(false);
+    //     setDice(freshDice);
+    //     setTurnScore(calculateScore(freshDice));
+    //     return;
+    //   }
+    // } 
 
     // 2) Roll only the unlocked dice
     const newDice = dice.map((val, idx) =>
@@ -197,16 +251,16 @@ export default function App() {
     );
 
     // 3) If all six of the newly rolled dice score, trigger Hot Dice
-    const totalScoringDice = countScoringDice(newDice);
-    if (totalScoringDice.count === 6) {
-      alert(`🔥 Hot dice! You rolled: [${newDice.join(', ')}]\nRolling 6 fresh dice...`);
-      const freshDice = Array.from({ length: 6 }, () => Math.ceil(Math.random() * 6));
-      setLocked(Array(6).fill(false));   // unlock all
-      setHasLockedThisTurn(false);
-      setDice(freshDice);
-      setTurnScore(calculateScore(freshDice));
-      return;
-    }
+    // const totalScoringDice = countScoringDice(newDice);
+    // if (totalScoringDice.count === 6) {
+    //   alert(`🔥 Hot dice! You rolled: [${newDice.join(', ')}]\nRolling 6 fresh dice...`);
+    //   const freshDice = Array.from({ length: 6 }, () => Math.ceil(Math.random() * 6));
+    //   setLocked(Array(6).fill(false));   // unlock all
+    //   setHasLockedThisTurn(false);
+    //   setDice(freshDice);
+    //   setTurnScore(calculateScore(freshDice));
+    //   return;
+    // }
 
     // 4) Normal roll: consume one roll
     setDice(newDice);
@@ -277,18 +331,21 @@ export default function App() {
 
   const confirmLock = () => {
   if (!canLock()) return;
+  const { totalScore, allDiceScoring } = calculateScoreAndCheckAllDiceScore(dice);
+
 
   const lockedVals = dice.filter((_, i) => locked[i]);
   const newScore = calculateScore(lockedVals);
   const totalLocked = locked.filter(Boolean).length;
-  const isHotDice = totalLocked === 6 && newScore > 0;
+  const isHotDiceLocked = totalLocked === 6 && newScore > 0;
 
-  const isFinalRoll = rolls === MAX_ROLLS;
-  const currentRollScore = calculateScore(dice);
-  const lockingValidScore = newScore > currentRollScore;
+  // === HOT DICE check moved from rollDice ===
+  // Check if all unlocked dice after roll score (hot dice after a roll)
+  // This means after confirming lock, if all dice score → hot dice!
+  const isHotDiceRoll = allDiceScoring;
 
-  // Case 1: Classic Hot Dice (locked all 6 scoring dice mid-turn)
-  if (isHotDice) {
+  // Case: Hot Dice by locking all scoring dice mid-turn (existing)
+  if (isHotDiceRoll) {
     alert(`🔥 Hot dice! You locked all 6 dice for a score of ${newScore}.\nRolling 6 fresh dice...`);
     const freshDice = Array.from({ length: 6 }, () => Math.ceil(Math.random() * 6));
     setLocked(Array(6).fill(false));
@@ -299,9 +356,9 @@ export default function App() {
     return;
   }
 
-  // ✅ Case 2: After 3rd roll, player locked scoring dice (non-Farkle)
-  if (isFinalRoll && currentRollScore > 0 && lockingValidScore) {
-    alert(`🔥 You survived all 3 rolls and locked scoring dice!\nRolling 6 fresh dice...`);
+  // Case: Hot Dice triggered by all dice scoring on this roll (moved from rollDice)
+  if (isHotDiceRoll) {
+    alert(`🔥 Hot dice! All dice are scoring: [${dice.join(', ')}]\nRolling 6 fresh dice...`);
     const freshDice = Array.from({ length: 6 }, () => Math.ceil(Math.random() * 6));
     setLocked(Array(6).fill(false));
     setHasLockedThisTurn(false);
@@ -311,10 +368,26 @@ export default function App() {
     return;
   }
 
+  // ✅ Case 2: After 3rd roll, player locked scoring dice (non-Farkle)
+  // const isFinalRoll = rolls === MAX_ROLLS;
+  // const currentRollScore = calculateScore(dice);
+  // const lockingValidScore = newScore > currentRollScore;
+  // if (isFinalRoll && currentRollScore > 0 && lockingValidScore) {
+  //   alert(`🔥 You survived all 3 rolls and locked scoring dice!\nRolling 6 fresh dice...`);
+  //   const freshDice = Array.from({ length: 6 }, () => Math.ceil(Math.random() * 6));
+  //   setLocked(Array(6).fill(false));
+  //   setHasLockedThisTurn(false);
+  //   setDice(freshDice);
+  //   setTurnScore(calculateScore(freshDice));
+  //   setRolls(0);
+  //   return;
+  // }
+
   // Normal case: locking some scoring dice
   setTurnScore(newScore);
   setHasLockedThisTurn(true);
 };
+
 
 
 
