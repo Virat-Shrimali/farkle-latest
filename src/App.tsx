@@ -331,13 +331,13 @@ export default function App() {
 
   const confirmLock = () => {
   if (!canLock()) return;
-  const { totalScore, allDiceScoring } = calculateScoreAndCheckAllDiceScore(dice);
+  const { allDiceScoring } = calculateScoreAndCheckAllDiceScore(dice);
 
 
   const lockedVals = dice.filter((_, i) => locked[i]);
   const newScore = calculateScore(lockedVals);
-  const totalLocked = locked.filter(Boolean).length;
-  const isHotDiceLocked = totalLocked === 6 && newScore > 0;
+  // const totalLocked = locked.filter(Boolean).length;
+  // const isHotDiceLocked = totalLocked === 6 && newScore > 0;
 
   // === HOT DICE check moved from rollDice ===
   // Check if all unlocked dice after roll score (hot dice after a roll)
