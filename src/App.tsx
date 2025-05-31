@@ -24,27 +24,15 @@ function calculateScore(dice: number[]): number {
   let counts = Array(7).fill(0);
   dice.forEach((d: number) => counts[d]++);
 
-  // 1. Straight 1-6
   if (counts.slice(1).every(c => c === 1)) return 1500;
-
-  // 2. Six of a kind
   if (counts.some(c => c === 6)) return 3000;
-
-  // 3. Five of a kind
   if (counts.some(c => c === 5)) return 2000;
-
-  // 4. Two triplets
   if (counts.filter(c => c === 3).length === 2) return 2500;
-
-  // 5. Three pairs
   if (counts.filter(c => c === 2).length === 3) return 1500;
-
-  // 6. Four of a kind + a pair
   if (counts.some(c => c === 4) && counts.some(c => c === 2)) return 1500;
 
   let score = 0;
 
-  // 7. Handle 6, 5, 4 of a kind
   for (let i = 1; i <= 6; i++) {
     if (counts[i] >= 6) {
       score += 3000;
@@ -58,7 +46,6 @@ function calculateScore(dice: number[]): number {
     }
   }
 
-  // 8. Three of a kind (priority: 6 to 1)
   for (let i = 6; i >= 1; i--) {
     if (counts[i] >= 3) {
       switch (i) {
@@ -73,7 +60,6 @@ function calculateScore(dice: number[]): number {
     }
   }
 
-  // 9. Remaining single 1s and 5s
   score += counts[1] * 100;
   score += counts[5] * 50;
 
@@ -83,7 +69,17 @@ function calculateScore(dice: number[]): number {
 const Dice = ({ value, locked, onClick }: { value: number; locked: boolean; onClick: () => void }) => (
   <button
     onClick={onClick}
-    className={`m-2 w-14 h-14 rounded-lg text-2xl font-bold border-2 ${locked ? 'bg-green-400' : 'bg-white'}`}
+    style={{
+      margin: '0.5rem',
+      width: '3.5rem',
+      height: '3.5rem',
+      borderRadius: '0.5rem',
+      fontSize: '1.5rem',
+      fontWeight: 'bold',
+      border: '2px solid black',
+      backgroundColor: locked ? '#4ade80' : 'white',
+      cursor: 'pointer'
+    }}
   >
     {value}
   </button>
@@ -142,26 +138,70 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-blue-100 text-center p-6">
-      <h1 className="text-3xl font-bold mb-4">🎲 Farkle Game</h1>
-      <div className="flex justify-center flex-wrap mb-4">
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(to bottom right, #f1f5f9, #dbeafe)',
+      textAlign: 'center',
+      padding: '1.5rem',
+      fontFamily: 'Arial, sans-serif'
+    }}>
+      <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1rem' }}>🎲 Farkle Game</h1>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        flexWrap: 'wrap',
+        marginBottom: '1rem'
+      }}>
         {dice.map((value, idx) => (
           <span key={idx}>
             <Dice value={value} locked={locked[idx]} onClick={() => toggleLock(idx)} />
           </span>
         ))}
       </div>
-      <p className="text-lg">Rolls this turn: {rolls} / {MAX_ROLLS}</p>
-      <p className="text-lg font-semibold">Turn Score: {turnScore}</p>
-      <p className="text-lg font-bold text-green-700">Total Score: {totalScore}</p>
-      <div className="mt-6 space-x-4">
-        <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600" onClick={rollDice} disabled={rolls >= MAX_ROLLS}>
+      <p style={{ fontSize: '1.125rem' }}>Rolls this turn: {rolls} / {MAX_ROLLS}</p>
+      <p style={{ fontSize: '1.125rem', fontWeight: '600' }}>Turn Score: {turnScore}</p>
+      <p style={{ fontSize: '1.125rem', fontWeight: 'bold', color: '#15803d' }}>Total Score: {totalScore}</p>
+      <div style={{ marginTop: '1.5rem' }}>
+        <button
+          onClick={rollDice}
+          disabled={rolls >= MAX_ROLLS}
+          style={{
+            padding: '0.5rem 1rem',
+            marginRight: '0.5rem',
+            backgroundColor: rolls >= MAX_ROLLS ? '#94a3b8' : '#3b82f6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '0.375rem',
+            cursor: rolls >= MAX_ROLLS ? 'not-allowed' : 'pointer'
+          }}
+        >
           Roll Dice
         </button>
-        <button className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600" onClick={endTurn}>
+        <button
+          onClick={endTurn}
+          style={{
+            padding: '0.5rem 1rem',
+            marginRight: '0.5rem',
+            backgroundColor: '#22c55e',
+            color: 'white',
+            border: 'none',
+            borderRadius: '0.375rem',
+            cursor: 'pointer'
+          }}
+        >
           End Turn
         </button>
-        <button className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600" onClick={resetTurn}>
+        <button
+          onClick={resetTurn}
+          style={{
+            padding: '0.5rem 1rem',
+            backgroundColor: '#ef4444',
+            color: 'white',
+            border: 'none',
+            borderRadius: '0.375rem',
+            cursor: 'pointer'
+          }}
+        >
           Reset Turn
         </button>
       </div>
