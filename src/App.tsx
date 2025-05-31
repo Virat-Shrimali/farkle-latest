@@ -92,38 +92,63 @@ export default function App() {
   const [turnScore, setTurnScore] = useState(0);
   const [totalScore, setTotalScore] = useState(0);
 
+  // const rollDice = () => {
+  //   const newDice = dice.map((val, idx) => locked[idx] ? val : Math.ceil(Math.random() * 6));
+  //   setDice(newDice);
+  //   setRolls(prev => prev + 1);
+
+  //   const lockedDice = newDice.filter((_, i) => locked[i]);
+  //   const unlockedIndices = newDice.map((_, i) => i).filter(i => !locked[i]);
+
+  //   const subsets = getSubsets(unlockedIndices);
+
+  //   const farkle = !subsets.some(subset => {
+  //     const testDice = [...lockedDice, ...subset.map(i => newDice[i])];
+  //     return calculateScore(testDice) > calculateScore(lockedDice);
+  //   });
+
+  //   if (farkle) {
+  //     alert('Farkle! No score this turn.');
+  //     resetTurn();
+  //     return;
+  //   }
+
+  //   setTurnScore(calculateScore(lockedDice));
+  // };
   const rollDice = () => {
     const newDice = dice.map((val, idx) => locked[idx] ? val : Math.ceil(Math.random() * 6));
     setDice(newDice);
     setRolls(prev => prev + 1);
-
+  
     const lockedDice = newDice.filter((_, i) => locked[i]);
     const unlockedIndices = newDice.map((_, i) => i).filter(i => !locked[i]);
-
+  
     const subsets = getSubsets(unlockedIndices);
-
+  
     const farkle = !subsets.some(subset => {
       const testDice = [...lockedDice, ...subset.map(i => newDice[i])];
       return calculateScore(testDice) > calculateScore(lockedDice);
     });
-
+  
     if (farkle) {
-      alert('Farkle! No score this turn.');
+      const farkleDice = newDice.map((val, idx) => locked[idx] ? `[${val}]` : `${val}`).join(', ');
+      alert(`Farkle! Dice: ${farkleDice}\n(No scoring combination found.)`);
       resetTurn();
       return;
     }
-
+  
     setTurnScore(calculateScore(lockedDice));
   };
-
+  
   const toggleLock = (idx: number) => {
     const newLocked = [...locked];
     newLocked[idx] = !newLocked[idx];
     setLocked(newLocked);
-
-    const scoringDice = dice.filter((_, i) => newLocked[i]);
-    setTurnScore(calculateScore(scoringDice));
   };
+  
+  
+  
+  
 
   const resetTurn = () => {
     setDice(Array(6).fill(1));
@@ -136,6 +161,21 @@ export default function App() {
     setTotalScore(prev => prev + turnScore);
     resetTurn();
   };
+
+  const canLock = (): boolean => {
+    const selectedScore = calculateScore(dice.filter((_, i) => locked[i]));
+    const currentScore = turnScore;
+    return selectedScore > currentScore;
+  };
+  const confirmLock = () => {
+    if (!canLock()) return;
+  
+    const newScore = calculateScore(dice.filter((_, i) => locked[i]));
+    setTurnScore(newScore);
+    // lock in the current locked selection (no-op here since already set)
+  };
+  
+  
 
   return (
     <div style={{
@@ -204,6 +244,22 @@ export default function App() {
         >
           Reset Turn
         </button>
+        <button
+  onClick={confirmLock}
+  disabled={!canLock()}
+  style={{
+    padding: '0.5rem 1rem',
+    marginRight: '0.5rem',
+    backgroundColor: canLock() ? '#f59e0b' : '#d1d5db',
+    color: canLock() ? 'white' : '#6b7280',
+    border: 'none',
+    borderRadius: '0.375rem',
+    cursor: canLock() ? 'pointer' : 'not-allowed'
+  }}
+>
+  Lock Selected Dice
+</button>
+
       </div>
     </div>
   );
