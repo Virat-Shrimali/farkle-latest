@@ -467,10 +467,15 @@ export default function App() {
   // };
 
   const canLock = (): boolean => {
-    const selectedScore = calculateScore(dice.filter((_, i) => locked[i]));
-    const currentScore = turnScore;
-    return selectedScore > 0 || ((dice.some((_, i) => locked[i] && countScoringDice(dice).contributing[i])>currentScore) && (selectedScore > 0));
-  };
+  const lockedVals = dice.filter((_, i) => locked[i]);
+  if (lockedVals.length === 0) return false;
+
+  // Calculate potential new score if we lock these dice
+  const newLockedSet = [...lockedDiceValues, ...lockedVals];
+  const newTotal = calculateScore(newLockedSet);
+  
+  return newTotal > turnScore;
+};
   const confirmLock = () => {
     if (!canLock()) {
       alert("⚠️ You cannot lock these dice. None of them contribute to a score (Farkle).");
