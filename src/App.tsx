@@ -121,57 +121,57 @@ const getSubsets = (arr: number[]): number[][] => {
   return result;
 };
 
-function countScoringDice(dice: number[]): { count: number; contributing: boolean[] } {
-  const counts = Array(7).fill(0);
-  const contributing = Array(dice.length).fill(false);
-  dice.forEach(d => counts[d]++);
+// function countScoringDice(dice: number[]): { count: number; contributing: boolean[] } {
+//   const counts = Array(7).fill(0);
+//   const contributing = Array(dice.length).fill(false);
+//   dice.forEach(d => counts[d]++);
 
-  if (counts.slice(1).every(c => c === 1)) {
-    return { count: 6, contributing: Array(6).fill(true) };
-  }
-  if (counts.filter(c => c === 2).length === 3) {
-    return { count: 6, contributing: Array(6).fill(true) };
-  }
-  if (counts.filter(c => c === 3).length === 2) {
-    return { count: 6, contributing: Array(6).fill(true) };
-  }
-  if (counts.includes(4) && counts.includes(2)) {
-    return { count: 6, contributing: Array(6).fill(true) };
-  }
-  if (counts.includes(6)) {
-    return { count: 6, contributing: Array(6).fill(true) };
-  }
+//   if (counts.slice(1).every(c => c === 1)) {
+//     return { count: 6, contributing: Array(6).fill(true) };
+//   }
+//   if (counts.filter(c => c === 2).length === 3) {
+//     return { count: 6, contributing: Array(6).fill(true) };
+//   }
+//   if (counts.filter(c => c === 3).length === 2) {
+//     return { count: 6, contributing: Array(6).fill(true) };
+//   }
+//   if (counts.includes(4) && counts.includes(2)) {
+//     return { count: 6, contributing: Array(6).fill(true) };
+//   }
+//   if (counts.includes(6)) {
+//     return { count: 6, contributing: Array(6).fill(true) };
+//   }
 
-  const used = Array(dice.length).fill(false);
+//   const used = Array(dice.length).fill(false);
 
-  for (let num = 1; num <= 6; num++) {
-    if (counts[num] >= 3) {
-      let usedCount = 0;
-      for (let i = 0; i < dice.length && usedCount < 3; i++) {
-        if (dice[i] === num && !used[i]) {
-          contributing[i] = true;
-          used[i] = true;
-          usedCount++;
-        }
-      }
-      counts[num] -= 3;
-    }
-  }
+//   for (let num = 1; num <= 6; num++) {
+//     if (counts[num] >= 3) {
+//       let usedCount = 0;
+//       for (let i = 0; i < dice.length && usedCount < 3; i++) {
+//         if (dice[i] === num && !used[i]) {
+//           contributing[i] = true;
+//           used[i] = true;
+//           usedCount++;
+//         }
+//       }
+//       counts[num] -= 3;
+//     }
+//   }
 
-  [1, 5].forEach(num => {
-    let remaining = counts[num];
-    for (let i = 0; i < dice.length && remaining > 0; i++) {
-      if (dice[i] === num && !used[i]) {
-        contributing[i] = true;
-        used[i] = true;
-        remaining--;
-      }
-    }
-  });
+//   [1, 5].forEach(num => {
+//     let remaining = counts[num];
+//     for (let i = 0; i < dice.length && remaining > 0; i++) {
+//       if (dice[i] === num && !used[i]) {
+//         contributing[i] = true;
+//         used[i] = true;
+//         remaining--;
+//       }
+//     }
+//   });
 
-  const count = contributing.filter(Boolean).length;
-  return { count, contributing };
-}
+//   const count = contributing.filter(Boolean).length;
+//   return { count, contributing };
+// }
 
 interface DiceProps {
   value: number;
