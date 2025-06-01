@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 
 const MAX_ROLLS = 3;
@@ -320,7 +319,7 @@ export default function App() {
     const newTotal = calculateScore(newLockedSet);
 
     // Allow locking only if the combined score is greater than the current turn score
-    return lockedAreScoring && newTotal > turnScore;
+    return newTotal > turnScore;
   };
 
   const confirmLock = () => {
@@ -345,15 +344,6 @@ export default function App() {
       setHasLockedThisTurn(false);
       setTurnScore(totalTurnScore);
       setRolls(0);
-
-      if (playerScores[`player${currentPlayer}`] + totalTurnScore >= WINNING_SCORE) {
-        setPlayerScores(prev => ({
-          ...prev,
-          [`player${currentPlayer}`]: prev[`player${currentPlayer}`] + totalTurnScore
-        }));
-        setGameOver(true);
-        setWinner(currentPlayer);
-      }
       return;
     }
 
