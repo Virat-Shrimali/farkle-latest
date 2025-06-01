@@ -469,7 +469,7 @@ export default function App() {
   const canLock = (): boolean => {
     const selectedScore = calculateScore(dice.filter((_, i) => locked[i]));
     const currentScore = turnScore;
-    return selectedScore > 0 || (dice.some((_, i) => locked[i] && countScoringDice(dice).contributing[i])>currentScore && selectedScore > 0);
+    return selectedScore > 0 || (dice.some((_, i) => locked[i] && countScoringDice(dice).contributing[i])>currentScore && (selectedScore > 0));
   };
   const confirmLock = () => {
     if (!canLock()) {
