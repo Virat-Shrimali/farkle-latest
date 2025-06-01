@@ -73,40 +73,7 @@ const getSubsets = (arr: number[]): number[][] => {
 
 // Count how many dice in this array contribute to any scoring:
 // triples (or more) count all dice in that set, plus single 1s and 5s.
-export function calculateScore(dice: number[]): number {
-  const counts = Array(7).fill(0);
-  dice.forEach(d => counts[d]++);
-
-  let score = 0;
-
-  // Check for straight 1-6
-  if (counts.slice(1).every(c => c === 1)) return 1500;
-
-  // Three pairs
-  if (counts.filter(c => c === 2).length === 3) return 1500;
-
-  // Two triplets
-  if (counts.filter(c => c === 3).length === 2) return 2500;
-
-  // 4 of a kind + a pair
-  if (counts.includes(4) && counts.includes(2)) return 1500;
-
-  // 6 of a kind
-  if (counts.includes(6)) return 3000;
-
-  for (let i = 1; i <= 6; i++) {
-    if (counts[i] >= 3) {
-      score += (i === 1 ? 1000 : i * 100) * Math.pow(2, counts[i] - 3);
-      counts[i] = 0; // Already scored
-    }
-  }
-
-  // Remaining 1s and 5s
-  score += counts[1] * 100;
-  score += counts[5] * 50;
-
-  return score;
-}
+// }
 
 function countScoringDice(dice: number[]): { count: number; contributing: boolean[] } {
   const counts = Array(7).fill(0);
