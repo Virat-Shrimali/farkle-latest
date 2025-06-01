@@ -459,23 +459,23 @@ export default function App() {
     resetTurn();
   };
 
+  // const canLock = (): boolean => {
+  //   const lockedVals = dice.filter((_, i) => locked[i]);
+  //   const { contributing } = countScoringDice(dice);
+  //   const lockedAreScoring = dice.some((_, i) => locked[i] && contributing[i]);
+  //   return lockedVals.length > 0 && lockedAreScoring;
+  // };
+
   const canLock = (): boolean => {
-    const lockedVals = dice.filter((_, i) => locked[i]);
-    const { contributing } = countScoringDice(dice);
-    const lockedAreScoring = dice.some((_, i) => locked[i] && contributing[i]);
-    return lockedVals.length > 0 && lockedAreScoring;
-  };
+  const lockedVals = dice.filter((_, i) => locked[i]);
+  if (lockedVals.length === 0) return false;
 
-//   const canLock = (): boolean => {
-//   const lockedVals = dice.filter((_, i) => locked[i]);
-//   if (lockedVals.length === 0) return false;
-
-//   // Calculate potential new score if we lock these dice
-//   const newLockedSet = [...lockedDiceValues, ...lockedVals];
-//   const newTotal = calculateScore(newLockedSet);
+  // Calculate potential new score if we lock these dice
+  const newLockedSet = [...lockedDiceValues, ...lockedVals];
+  const newTotal = calculateScore(newLockedSet);
   
-//   return newTotal > turnScore;
-// };
+  return newTotal > turnScore;
+};
   const confirmLock = () => {
     if (!canLock()) {
       alert("⚠️ You cannot lock these dice. None of them contribute to a score (Farkle).");
