@@ -249,10 +249,119 @@ const Dice = ({
   </button>
 );
 
+// export default function App() {
+//   const [dice, setDice] = useState<number[]>(Array(6).fill(1));
+//   const [lockedDiceValues, setLockedDiceValues] = useState<number[]>([]);
+
+//   const [locked, setLocked] = useState<boolean[]>(Array(6).fill(false));
+//   const [rolls, setRolls] = useState(0);
+//   const [turnScore, setTurnScore] = useState(0);
+//   const [totalScore, setTotalScore] = useState(0);
+//   const [hasLockedThisTurn, setHasLockedThisTurn] = useState(false);
+
+  
+
+//   const toggleLock = (idx: number) => {
+//     const newLocked = [...locked];
+//     newLocked[idx] = !newLocked[idx];
+//     setLocked(newLocked);
+//   };
+
+//   const resetTurn = () => {
+//     setDice(Array(6).fill(1));
+//     setLocked(Array(6).fill(false));
+//     setLockedDiceValues([]);
+//     setRolls(0);
+//     setTurnScore(0);
+//     setHasLockedThisTurn(false);
+//   };
+
+//   const endTurn = () => {
+//     setTotalScore(prev => prev + turnScore);
+//     resetTurn();
+//     setLockedDiceValues([]);
+
+//   };
+
+//   // const canLock = (): boolean => {
+//   //   const selectedScore = calculateScore(dice.filter((_, i) => locked[i]));
+//   //   const currentScore = turnScore;
+//   //   return selectedScore > currentScore;
+//   // };
+
+//   const canLock = (): boolean => {
+//   const lockedVals = dice.filter((_, i) => locked[i]);
+
+//   // Total score from all locked dice (not just newly selected ones)
+//   const selectedScore = calculateScore(lockedVals);
+
+//   // Determine which dice contribute to the score
+//   const { contributing } = countScoringDice(dice);
+
+//   // Check if at least one locked die is a contributing scorer
+//   const lockedAreScoring = dice.some((_, i) => locked[i] && contributing[i]);
+
+//   return selectedScore > 0 && lockedAreScoring;
+// };
+
+
+//   const confirmLock = () => {
+//     if (!canLock()) {
+//   alert("⚠️ You cannot lock these dice. None of them contribute to a score (Farkle).");
+//   return;
+// }
+
+
+//     const { allDiceScoring } = calculateScoreAndCheckAllDiceScore(dice);
+//     const lockedVals = dice.filter((_, i) => locked[i]);
+//     const newScore = calculateScore(lockedVals);
+//     const isHotDiceRoll = allDiceScoring;
+
+//     // Hot Dice
+//     if (isHotDiceRoll) {
+//       alert(`🔥 Hot dice! You locked all 6 dice for a score of ${newScore}.\nRolling 6 fresh dice...`);
+//       const freshDice = Array.from({ length: 6 }, () => Math.ceil(Math.random() * 6));
+//       setDice(freshDice);
+//       setLocked(Array(6).fill(false));
+//       setLockedDiceValues([]);
+//       setHasLockedThisTurn(false);
+//       setTurnScore(calculateScore(freshDice));
+//       setRolls(0);
+//       return;
+//     }
+
+//     // Normal case: update state
+//     const newDice: number[] = [];
+//     const newLocked: boolean[] = [];
+
+//     dice.forEach((value, i) => {
+//       if (!locked[i]) {
+//         newDice.push(value);
+//         newLocked.push(false);
+//       }
+//     });
+
+//     setLockedDiceValues(prev => [...prev, ...lockedVals]);
+//     setDice(newDice);
+//     setLocked(newLocked);
+//     setTurnScore(newScore);
+//     setHasLockedThisTurn(true);
+//   };
+
+
+
+
+
+
+
+//   const canRoll = (): boolean => {
+//     return rolls === 0 || hasLockedThisTurn;
+//   };
+// ... existing imports and functions ...
+
 export default function App() {
   const [dice, setDice] = useState<number[]>(Array(6).fill(1));
   const [lockedDiceValues, setLockedDiceValues] = useState<number[]>([]);
-
   const [locked, setLocked] = useState<boolean[]>(Array(6).fill(false));
   const [rolls, setRolls] = useState(0);
   const [turnScore, setTurnScore] = useState(0);
@@ -260,48 +369,15 @@ export default function App() {
   const [hasLockedThisTurn, setHasLockedThisTurn] = useState(false);
 
   const rollDice = () => {
-    // 1) If all six dice are locked AND all locked dice score, trigger Hot Dice
-    // if (locked.every(l => l)) {
-    //   const lockedVals = dice.filter((_, i) => locked[i]);
-    //   const scoringCount = countScoringDice(lockedVals);
-
-    //   if (scoringCount.count === 6) {
-    //     alert(
-    //       `🔥 Hot dice! You had all six locked and scoring: [${lockedVals.join(
-    //         ', '
-    //       )}]\nRolling 6 fresh dice...`
-    //     );
-    //     const freshDice = Array.from({ length: 6 }, () => Math.ceil(Math.random() * 6));
-    //     setLocked(Array(6).fill(false));   // unlock all for new roll
-    //     setHasLockedThisTurn(false);
-    //     setDice(freshDice);
-    //     setTurnScore(calculateScore(freshDice));
-    //     return;
-    //   }
-    // } 
-
-    // 2) Roll only the unlocked dice
+    // Roll only unlocked dice
     const newDice = dice.map((val, idx) =>
       locked[idx] ? val : Math.ceil(Math.random() * 6)
     );
 
-    // 3) If all six of the newly rolled dice score, trigger Hot Dice
-    // const totalScoringDice = countScoringDice(newDice);
-    // if (totalScoringDice.count === 6) {
-    //   alert(`🔥 Hot dice! You rolled: [${newDice.join(', ')}]\nRolling 6 fresh dice...`);
-    //   const freshDice = Array.from({ length: 6 }, () => Math.ceil(Math.random() * 6));
-    //   setLocked(Array(6).fill(false));   // unlock all
-    //   setHasLockedThisTurn(false);
-    //   setDice(freshDice);
-    //   setTurnScore(calculateScore(freshDice));
-    //   return;
-    // }
-
-    // 4) Normal roll: consume one roll
     setDice(newDice);
     setRolls(prev => prev + 1);
 
-    // 5) Check for Farkle
+    // Farkle check - consider both locked and unlocked dice
     const lockedDiceVals = newDice.filter((_, i) => locked[i]);
     const unlockedIndices = newDice.map((_, i) => i).filter(i => !locked[i]);
     const subsets = getSubsets(unlockedIndices);
@@ -319,33 +395,6 @@ export default function App() {
       resetTurn();
       return;
     }
-
-    // 6) After three rolls without a Farkle, trigger Hot Dice automatically
-    // if (rolls + 1 === MAX_ROLLS) {
-    //   alert(
-    //     `🔥 Hot dice! You used all ${MAX_ROLLS} rolls without a Farkle: [${newDice.join(
-    //       ', '
-    //     )}]\nRolling 6 fresh dice...`
-    //   );
-    //   const freshDice = Array.from({ length: 6 }, () => Math.ceil(Math.random() * 6));
-    //   setLocked(Array(6).fill(false));
-    //   setHasLockedThisTurn(false);
-    //   setDice(freshDice);
-    //   setTurnScore(calculateScore(freshDice));
-    //   return;
-    // }
-
-    // 7) Otherwise, update turnScore based on locked dice
-    // Update score based on selected locked dice (after a successful roll)
-    // Combine previously locked dice with currently selected locked ones
-    // const selectedLockedDice = newDice.filter((_, i) => locked[i]);
-    // const allLockedSoFar = [...lockedDiceValues, ...selectedLockedDice];
-    // setTurnScore(calculateScore(allLockedSoFar));
-const currentLockedThisRoll = newDice.filter((_, i) => locked[i]);
-const combinedLocked = [...lockedDiceValues, ...currentLockedThisRoll];
-const updatedScore = calculateScore(combinedLocked);
-setTurnScore(updatedScore);
-
   };
 
   const toggleLock = (idx: number) => {
@@ -366,49 +415,45 @@ setTurnScore(updatedScore);
   const endTurn = () => {
     setTotalScore(prev => prev + turnScore);
     resetTurn();
-    setLockedDiceValues([]);
-
   };
-
-  // const canLock = (): boolean => {
-  //   const selectedScore = calculateScore(dice.filter((_, i) => locked[i]));
-  //   const currentScore = turnScore;
-  //   return selectedScore > currentScore;
-  // };
 
   const canLock = (): boolean => {
-    const selectedScore = calculateScore(dice.filter((_, i) => locked[i]));
-    const currentScore = turnScore;
-    return selectedScore > currentScore;
+    const lockedVals = dice.filter((_, i) => locked[i]);
+    const { contributing } = countScoringDice(dice);
+    const lockedAreScoring = dice.some((_, i) => locked[i] && contributing[i]);
+    return lockedVals.length > 0 && lockedAreScoring;
   };
-
 
   const confirmLock = () => {
     if (!canLock()) {
-  alert("⚠️ You cannot lock these dice. None of them contribute to a score (Farkle).");
-  return;
-}
+      alert("⚠️ You cannot lock these dice. None of them contribute to a score (Farkle).");
+      return;
+    }
 
-
-    const { allDiceScoring } = calculateScoreAndCheckAllDiceScore(dice);
     const lockedVals = dice.filter((_, i) => locked[i]);
     const newScore = calculateScore(lockedVals);
+    const { allDiceScoring } = calculateScoreAndCheckAllDiceScore(dice);
     const isHotDiceRoll = allDiceScoring;
 
     // Hot Dice
     if (isHotDiceRoll) {
+      // Add hot dice score to current turn score
+      const totalTurnScore = turnScore + newScore;
       alert(`🔥 Hot dice! You locked all 6 dice for a score of ${newScore}.\nRolling 6 fresh dice...`);
-      const freshDice = Array.from({ length: 6 }, () => Math.ceil(Math.random() * 6));
+
+      // Force all dice to show 1 in the next roll
+      const freshDice = Array(6).fill(1);
+
       setDice(freshDice);
       setLocked(Array(6).fill(false));
       setLockedDiceValues([]);
       setHasLockedThisTurn(false);
-      setTurnScore(calculateScore(freshDice));
+      setTurnScore(totalTurnScore);
       setRolls(0);
       return;
     }
 
-    // Normal case: update state
+    // Normal lock case
     const newDice: number[] = [];
     const newLocked: boolean[] = [];
 
@@ -419,22 +464,23 @@ setTurnScore(updatedScore);
       }
     });
 
-    setLockedDiceValues(prev => [...prev, ...lockedVals]);
+    // Update locked dice values and calculate new total turn score
+    const updatedLockedDice = [...lockedDiceValues, ...lockedVals];
+    const updatedScore = calculateScore(updatedLockedDice);
+
+    setLockedDiceValues(updatedLockedDice);
     setDice(newDice);
     setLocked(newLocked);
-    setTurnScore(newScore);
+    setTurnScore(updatedScore);
     setHasLockedThisTurn(true);
   };
-
-
-
-
-
-
 
   const canRoll = (): boolean => {
     return rolls === 0 || hasLockedThisTurn;
   };
+
+  // ... rest of the component remains the same ...
+
 
   return (
     <div
