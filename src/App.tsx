@@ -2,69 +2,70 @@ import { useState } from 'react';
 import './index.css';
 
 const MAX_ROLLS = 3;
+
 // Input: dice is an array of 6 dice, e.g. [1,1,5,1,6,6]
 function calculateScore(dice: number[]): number {
-        if (dice.length === 0) return 0;
-      
-        let counts: number[] = Array(7).fill(0);
-        dice.forEach((d: number) => counts[d]++);
+  if (dice.length === 0) return 0;
+
+  let counts: number[] = Array(7).fill(0);
+  dice.forEach((d: number) => counts[d]++);
 
 
-      // 1. Straight 1-6
-      if (counts.slice(1).every(c => c === 1)) return 1500;
+  // 1. Straight 1-6
+  if (counts.slice(1).every(c => c === 1)) return 1500;
 
-      // 2. Six of a kind
-      if (counts.some(c => c === 6)) return 3000;
+  // 2. Six of a kind
+  if (counts.some(c => c === 6)) return 3000;
 
-      // 3. Five of a kind
-      if (counts.some(c => c === 5)) return 2000;
+  // 3. Five of a kind
+  if (counts.some(c => c === 5)) return 2000;
 
-      // 4. Two triplets
-      if (counts.filter(c => c === 3).length === 2) return 2500;
+  // 4. Two triplets
+  if (counts.filter(c => c === 3).length === 2) return 2500;
 
-      // 5. Three pairs
-      if (counts.filter(c => c === 2).length === 3) return 1500;
+  // 5. Three pairs
+  if (counts.filter(c => c === 2).length === 3) return 1500;
 
-      // 6. Four of a kind + a pair
-      if (counts.some(c => c === 4) && counts.some(c => c === 2)) return 1500;
+  // 6. Four of a kind + a pair
+  if (counts.some(c => c === 4) && counts.some(c => c === 2)) return 1500;
 
-      let score = 0;
+  let score = 0;
 
-      // 7. Handle 6, 5, 4 of a kind
-      for (let i = 1; i <= 6; i++) {
-        if (counts[i] >= 6) {
-          score += 3000;
-          counts[i] -= 6;
-        } else if (counts[i] === 5) {
-          score += 2000;
-          counts[i] -= 5;
-        } else if (counts[i] === 4) {
-          score += 1000;
-          counts[i] -= 4;
-        }
-      }
-
-      // 8. Three of a kind (priority: 6 to 1) — must be >= 3
-      for (let i = 6; i >= 1; i--) {
-        if (counts[i] >= 3) {
-          switch (i) {
-            case 1: score += 300; break;
-            case 2: score += 200; break;
-            case 3: score += 300; break;
-            case 4: score += 400; break;
-            case 5: score += 500; break;
-            case 6: score += 600; break;
-          }
-          counts[i] -= 3;
-        }
-      }
-
-      // 9. Remaining single 1s and 5s
-      score += counts[1] * 100;
-      score += counts[5] * 50;
-
-      return score;
+  // 7. Handle 6, 5, 4 of a kind
+  for (let i = 1; i <= 6; i++) {
+    if (counts[i] >= 6) {
+      score += 3000;
+      counts[i] -= 6;
+    } else if (counts[i] === 5) {
+      score += 2000;
+      counts[i] -= 5;
+    } else if (counts[i] === 4) {
+      score += 1000;
+      counts[i] -= 4;
     }
+  }
+
+  // 8. Three of a kind (priority: 6 to 1) — must be >= 3
+  for (let i = 6; i >= 1; i--) {
+    if (counts[i] >= 3) {
+      switch (i) {
+        case 1: score += 300; break;
+        case 2: score += 200; break;
+        case 3: score += 300; break;
+        case 4: score += 400; break;
+        case 5: score += 500; break;
+        case 6: score += 600; break;
+      }
+      counts[i] -= 3;
+    }
+  }
+
+  // 9. Remaining single 1s and 5s
+  score += counts[1] * 100;
+  score += counts[5] * 50;
+
+  return score;
+}
 
 
 function calculateScoreAndCheckAllDiceScore(dice: number[]) {
@@ -248,6 +249,8 @@ const Dice = ({
 
 export default function App() {
   const [dice, setDice] = useState<number[]>(Array(6).fill(1));
+  const [lockedDiceValues, setLockedDiceValues] = useState<number[]>([]);
+
   const [locked, setLocked] = useState<boolean[]>(Array(6).fill(false));
   const [rolls, setRolls] = useState(0);
   const [turnScore, setTurnScore] = useState(0);
@@ -259,7 +262,7 @@ export default function App() {
     // if (locked.every(l => l)) {
     //   const lockedVals = dice.filter((_, i) => locked[i]);
     //   const scoringCount = countScoringDice(lockedVals);
-      
+
     //   if (scoringCount.count === 6) {
     //     alert(
     //       `🔥 Hot dice! You had all six locked and scoring: [${lockedVals.join(
@@ -331,7 +334,16 @@ export default function App() {
     // }
 
     // 7) Otherwise, update turnScore based on locked dice
-    setTurnScore(calculateScore(lockedDiceVals));
+    // Update score based on selected locked dice (after a successful roll)
+    // Combine previously locked dice with currently selected locked ones
+    // const selectedLockedDice = newDice.filter((_, i) => locked[i]);
+    // const allLockedSoFar = [...lockedDiceValues, ...selectedLockedDice];
+    // setTurnScore(calculateScore(allLockedSoFar));
+const currentLockedThisRoll = newDice.filter((_, i) => locked[i]);
+const combinedLocked = [...lockedDiceValues, ...currentLockedThisRoll];
+const updatedScore = calculateScore(combinedLocked);
+setTurnScore(updatedScore);
+
   };
 
   const toggleLock = (idx: number) => {
@@ -343,6 +355,7 @@ export default function App() {
   const resetTurn = () => {
     setDice(Array(6).fill(1));
     setLocked(Array(6).fill(false));
+    setLockedDiceValues([]);
     setRolls(0);
     setTurnScore(0);
     setHasLockedThisTurn(false);
@@ -351,72 +364,75 @@ export default function App() {
   const endTurn = () => {
     setTotalScore(prev => prev + turnScore);
     resetTurn();
+    setLockedDiceValues([]);
+
   };
+
+  // const canLock = (): boolean => {
+  //   const selectedScore = calculateScore(dice.filter((_, i) => locked[i]));
+  //   const currentScore = turnScore;
+  //   return selectedScore > currentScore;
+  // };
 
   const canLock = (): boolean => {
-    const selectedScore = calculateScore(dice.filter((_, i) => locked[i]));
-    const currentScore = turnScore;
-    return selectedScore > currentScore;
-  };
+  const lockedVals = dice.filter((_, i) => locked[i]);
+
+  // Total score from all locked dice (not just newly selected ones)
+  const selectedScore = calculateScore(lockedVals);
+
+  // Determine which dice contribute to the score
+  const { contributing } = countScoringDice(dice);
+
+  // Check if at least one locked die is a contributing scorer
+  const lockedAreScoring = dice.some((_, i) => locked[i] && contributing[i]);
+
+  return selectedScore > 0 && lockedAreScoring;
+};
+
 
   const confirmLock = () => {
-  if (!canLock()) return;
-  const { allDiceScoring } = calculateScoreAndCheckAllDiceScore(dice);
+    if (!canLock()) {
+  alert("⚠️ You cannot lock these dice. None of them contribute to a score (Farkle).");
+  return;
+}
 
 
-  const lockedVals = dice.filter((_, i) => locked[i]);
-  const newScore = calculateScore(lockedVals);
-  // const totalLocked = locked.filter(Boolean).length;
-  // const isHotDiceLocked = totalLocked === 6 && newScore > 0;
+    const { allDiceScoring } = calculateScoreAndCheckAllDiceScore(dice);
+    const lockedVals = dice.filter((_, i) => locked[i]);
+    const newScore = calculateScore(lockedVals);
+    const isHotDiceRoll = allDiceScoring;
 
-  // === HOT DICE check moved from rollDice ===
-  // Check if all unlocked dice after roll score (hot dice after a roll)
-  // This means after confirming lock, if all dice score → hot dice!
-  const isHotDiceRoll = allDiceScoring;
+    // Hot Dice
+    if (isHotDiceRoll) {
+      alert(`🔥 Hot dice! You locked all 6 dice for a score of ${newScore}.\nRolling 6 fresh dice...`);
+      const freshDice = Array.from({ length: 6 }, () => Math.ceil(Math.random() * 6));
+      setDice(freshDice);
+      setLocked(Array(6).fill(false));
+      setLockedDiceValues([]);
+      setHasLockedThisTurn(false);
+      setTurnScore(calculateScore(freshDice));
+      setRolls(0);
+      return;
+    }
 
-  // Case: Hot Dice by locking all scoring dice mid-turn (existing)
-  if (isHotDiceRoll) {
-    alert(`🔥 Hot dice! You locked all 6 dice for a score of ${newScore}.\nRolling 6 fresh dice...`);
-    const freshDice = Array.from({ length: 6 }, () => Math.ceil(Math.random() * 6));
-    setLocked(Array(6).fill(false));
-    setHasLockedThisTurn(false);
-    setDice(freshDice);
-    setTurnScore(calculateScore(freshDice));
-    setRolls(0);
-    return;
-  }
+    // Normal case: update state
+    const newDice: number[] = [];
+    const newLocked: boolean[] = [];
 
-  // Case: Hot Dice triggered by all dice scoring on this roll (moved from rollDice)
-  if (isHotDiceRoll) {
-    alert(`🔥 Hot dice! All dice are scoring: [${dice.join(', ')}]\nRolling 6 fresh dice...`);
-    const freshDice = Array.from({ length: 6 }, () => Math.ceil(Math.random() * 6));
-    setLocked(Array(6).fill(false));
-    setHasLockedThisTurn(false);
-    setDice(freshDice);
-    setTurnScore(calculateScore(freshDice));
-    setRolls(0);
-    return;
-  }
+    dice.forEach((value, i) => {
+      if (!locked[i]) {
+        newDice.push(value);
+        newLocked.push(false);
+      }
+    });
 
-  // ✅ Case 2: After 3rd roll, player locked scoring dice (non-Farkle)
-  // const isFinalRoll = rolls === MAX_ROLLS;
-  // const currentRollScore = calculateScore(dice);
-  // const lockingValidScore = newScore > currentRollScore;
-  // if (isFinalRoll && currentRollScore > 0 && lockingValidScore) {
-  //   alert(`🔥 You survived all 3 rolls and locked scoring dice!\nRolling 6 fresh dice...`);
-  //   const freshDice = Array.from({ length: 6 }, () => Math.ceil(Math.random() * 6));
-  //   setLocked(Array(6).fill(false));
-  //   setHasLockedThisTurn(false);
-  //   setDice(freshDice);
-  //   setTurnScore(calculateScore(freshDice));
-  //   setRolls(0);
-  //   return;
-  // }
+    setLockedDiceValues(prev => [...prev, ...lockedVals]);
+    setDice(newDice);
+    setLocked(newLocked);
+    setTurnScore(newScore);
+    setHasLockedThisTurn(true);
+  };
 
-  // Normal case: locking some scoring dice
-  setTurnScore(newScore);
-  setHasLockedThisTurn(true);
-};
 
 
 
@@ -469,9 +485,10 @@ export default function App() {
           marginBottom: '1rem',
         }}
       >
-        {dice.map(
-          (value, idx) => locked[idx] && <Dice key={`locked-${idx}`} value={value} locked={true} />
-        )}
+        {lockedDiceValues.map((value, idx) => (
+          <Dice key={`locked-${idx}`} value={value} locked={true} />
+        ))}
+
       </div>
 
       <p style={{ fontSize: '1.125rem' }}>Rolls this turn: {rolls} / {MAX_ROLLS}</p>
