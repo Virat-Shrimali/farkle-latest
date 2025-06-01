@@ -368,35 +368,77 @@ export default function App() {
   const [totalScore, setTotalScore] = useState(0);
   const [hasLockedThisTurn, setHasLockedThisTurn] = useState(false);
 
+  // const rollDice = () => {
+  //   // Roll only unlocked dice
+  //   const newDice = dice.map((val, idx) =>
+  //     locked[idx] ? val : Math.ceil(Math.random() * 6)
+  //   );
+
+  //   setDice(newDice);
+  //   setRolls(prev => prev + 1);
+
+  //   // Farkle check - consider both locked and unlocked dice
+  //   const lockedDiceVals = newDice.filter((_, i) => locked[i]);
+  //   const unlockedIndices = newDice.map((_, i) => i).filter(i => !locked[i]);
+  //   const subsets = getSubsets(unlockedIndices);
+
+  //   const farkle = !subsets.some(subset => {
+  //     const testDice = [...lockedDiceVals, ...subset.map(i => newDice[i])];
+  //     return calculateScore(testDice) > calculateScore(lockedDiceVals);
+  //   });
+
+  //   if (farkle) {
+  //     const farkleDice = newDice
+  //       .map((val, idx) => (locked[idx] ? `[${val}]` : `${val}`))
+  //       .join(', ');
+  //     alert(`❌ Farkle! Dice: ${farkleDice}\n(No scoring combination found.)`);
+  //     resetTurn();
+  //     return;
+  //   }
+  // };
+
   const rollDice = () => {
-    // Roll only unlocked dice
-    const newDice = dice.map((val, idx) =>
-      locked[idx] ? val : Math.ceil(Math.random() * 6)
-    );
+  const newDice = dice.map((val, idx) =>
+    locked[idx] ? val : Math.ceil(Math.random() * 6)
+  );
 
-    setDice(newDice);
-    setRolls(prev => prev + 1);
+  setDice(newDice);
+  setRolls(prev => prev + 1);
 
-    // Farkle check - consider both locked and unlocked dice
-    const lockedDiceVals = newDice.filter((_, i) => locked[i]);
-    const unlockedIndices = newDice.map((_, i) => i).filter(i => !locked[i]);
-    const subsets = getSubsets(unlockedIndices);
+  // Create a combined array of all dice in play (locked values + current dice)
+  const allDiceInPlay = [...lockedDiceValues, ...newDice];
+  const allDiceLockedStatus = [
+    ...lockedDiceValues.map(() => true), 
+    ...locked
+  ];
 
-    const farkle = !subsets.some(subset => {
-      const testDice = [...lockedDiceVals, ...subset.map(i => newDice[i])];
-      return calculateScore(testDice) > calculateScore(lockedDiceVals);
-    });
+  // Farkle check - consider all dice in play
+  const lockedInCurrentRoll = newDice.filter((_, i) => locked[i]);
+  const base = [...lockedDiceValues, ...lockedInCurrentRoll];
+  const baseScore = calculateScore(base);
 
-    if (farkle) {
-      const farkleDice = newDice
-        .map((val, idx) => (locked[idx] ? `[${val}]` : `${val}`))
-        .join(', ');
-      alert(`❌ Farkle! Dice: ${farkleDice}\n(No scoring combination found.)`);
-      resetTurn();
-      return;
-    }
-  };
+  const unlockedIndices = newDice
+    .map((_, i) => i)
+    .filter(i => !locked[i]);
+  const subsets = getSubsets(unlockedIndices);
 
+  const farkle = !subsets.some(subset => {
+    if (subset.length === 0) return false;
+    const testDice = [...base, ...subset.map(i => newDice[i])];
+    return calculateScore(testDice) > baseScore;
+  });
+
+  if (farkle) {
+    // Create a display string showing all dice with locked status
+    const diceDisplay = allDiceInPlay.map((val, idx) => 
+      allDiceLockedStatus[idx] ? `[${val}]` : `${val}`
+    ).join(', ');
+
+    alert(`❌ Farkle! Dice: ${diceDisplay}\n(No scoring combination found.)`);
+    resetTurn();
+    return;
+  }
+};
   const toggleLock = (idx: number) => {
     const newLocked = [...locked];
     newLocked[idx] = !newLocked[idx];
@@ -417,13 +459,18 @@ export default function App() {
     resetTurn();
   };
 
-  const canLock = (): boolean => {
-    const lockedVals = dice.filter((_, i) => locked[i]);
-    const { contributing } = countScoringDice(dice);
-    const lockedAreScoring = dice.some((_, i) => locked[i] && contributing[i]);
-    return lockedVals.length > 0 && lockedAreScoring;
-  };
+  // const canLock = (): boolean => {
+  //   const lockedVals = dice.filter((_, i) => locked[i]);
+  //   const { contributing } = countScoringDice(dice);
+  //   const lockedAreScoring = dice.some((_, i) => locked[i] && contributing[i]);
+  //   return lockedVals.length > 0 && lockedAreScoring;
+  // };
 
+  const canLock = (): boolean => {
+    const selectedScore = calculateScore(dice.filter((_, i) => locked[i]));
+    const currentScore = turnScore;
+    return selectedScore > 0 || (dice.some((_, i) => locked[i] && countScoringDice(dice).contributing[i])>currentScore && selectedScore > 0);
+  };
   const confirmLock = () => {
     if (!canLock()) {
       alert("⚠️ You cannot lock these dice. None of them contribute to a score (Farkle).");
