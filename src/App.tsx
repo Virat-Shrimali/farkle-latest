@@ -377,19 +377,10 @@ setTurnScore(updatedScore);
   // };
 
   const canLock = (): boolean => {
-  const lockedVals = dice.filter((_, i) => locked[i]);
-
-  // Total score from all locked dice (not just newly selected ones)
-  const selectedScore = calculateScore(lockedVals);
-
-  // Determine which dice contribute to the score
-  const { contributing } = countScoringDice(dice);
-
-  // Check if at least one locked die is a contributing scorer
-  const lockedAreScoring = dice.some((_, i) => locked[i] && contributing[i]);
-
-  return selectedScore > 0 && lockedAreScoring;
-};
+    const selectedScore = calculateScore(dice.filter((_, i) => locked[i]));
+    const currentScore = turnScore;
+    return selectedScore > currentScore;
+  };
 
 
   const confirmLock = () => {
