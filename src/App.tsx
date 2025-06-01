@@ -3,6 +3,8 @@ import './index.css';
 
 const MAX_ROLLS = 3;
 
+
+
 // Input: dice is an array of 6 dice, e.g. [1,1,5,1,6,6]
 function calculateScore(dice: number[]): number {
   if (dice.length === 0) return 0;
