@@ -3,11 +3,12 @@ import './index.css';
 
 const MAX_ROLLS = 3;
 // Input: dice is an array of 6 dice, e.g. [1,1,5,1,6,6]
-export function calculateScore(dice) {
-      if (dice.length === 0) return 0;
+function calculateScore(dice: number[]): number {
+        if (dice.length === 0) return 0;
+      
+        let counts: number[] = Array(7).fill(0);
+        dice.forEach((d: number) => counts[d]++);
 
-      let counts = Array(7).fill(0);
-      dice.forEach(d => counts[d]++);
 
       // 1. Straight 1-6
       if (counts.slice(1).every(c => c === 1)) return 1500;
