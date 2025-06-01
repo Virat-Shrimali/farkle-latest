@@ -173,20 +173,6 @@ function countScoringDice(dice: number[]): { count: number; contributing: boolea
   return { count, contributing };
 }
 
-function checkHotDice(dice: number[], rollCount: number): boolean {
-  const { count } = countScoringDice(dice);
-
-  if (count === dice.length) {
-    return true;
-  }
-
-  if (rollCount >= 3 && count < dice.length) {
-    return false;
-  }
-
-  return false;
-}
-
 interface DiceProps {
   value: number;
   locked: boolean;
@@ -290,9 +276,9 @@ export default function App() {
 
     setPlayerScores(prev => {
       const newScores = { ...prev };
-      newScores[`player${currentPlayer}`] += turnScore;
+      newScores[`player${currentPlayer}` as keyof typeof playerScores] += turnScore;
 
-      if (newScores[`player${currentPlayer}`] >= WINNING_SCORE) {
+      if (newScores[`player${currentPlayer}` as keyof typeof playerScores] >= WINNING_SCORE) {
         setGameOver(true);
         setWinner(currentPlayer);
       }
@@ -311,14 +297,15 @@ export default function App() {
     if (lockedVals.length === 0) return false;
 
     // Check if the selected dice contribute to the score for the current player's turn
-    const { contributing } = countScoringDice(dice);
-    const lockedAreScoring = dice.some((_, i) => locked[i] && contributing[i]);
+    // const { contributing } = countScoringDice(dice);
+    // const lockedAreScoring = dice.some((_, i) => locked[i] && contributing[i]);
 
     // Calculate potential new score including previously locked dice for this turn
     const newLockedSet = [...lockedDiceValues, ...lockedVals];
     const newTotal = calculateScore(newLockedSet);
 
     // Allow locking only if the combined score is greater than the current turn score
+    // and at least one selected die contributes to the score
     return newTotal > turnScore;
   };
 
