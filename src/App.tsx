@@ -3,6 +3,68 @@ import './index.css';
 
 const MAX_ROLLS = 3;
 // Input: dice is an array of 6 dice, e.g. [1,1,5,1,6,6]
+function calculateScore(dice) {
+      if (dice.length === 0) return 0;
+
+      let counts = Array(7).fill(0);
+      dice.forEach(d => counts[d]++);
+
+      // 1. Straight 1-6
+      if (counts.slice(1).every(c => c === 1)) return 1500;
+
+      // 2. Six of a kind
+      if (counts.some(c => c === 6)) return 3000;
+
+      // 3. Five of a kind
+      if (counts.some(c => c === 5)) return 2000;
+
+      // 4. Two triplets
+      if (counts.filter(c => c === 3).length === 2) return 2500;
+
+      // 5. Three pairs
+      if (counts.filter(c => c === 2).length === 3) return 1500;
+
+      // 6. Four of a kind + a pair
+      if (counts.some(c => c === 4) && counts.some(c => c === 2)) return 1500;
+
+      let score = 0;
+
+      // 7. Handle 6, 5, 4 of a kind
+      for (let i = 1; i <= 6; i++) {
+        if (counts[i] >= 6) {
+          score += 3000;
+          counts[i] -= 6;
+        } else if (counts[i] === 5) {
+          score += 2000;
+          counts[i] -= 5;
+        } else if (counts[i] === 4) {
+          score += 1000;
+          counts[i] -= 4;
+        }
+      }
+
+      // 8. Three of a kind (priority: 6 to 1) — must be >= 3
+      for (let i = 6; i >= 1; i--) {
+        if (counts[i] >= 3) {
+          switch (i) {
+            case 1: score += 300; break;
+            case 2: score += 200; break;
+            case 3: score += 300; break;
+            case 4: score += 400; break;
+            case 5: score += 500; break;
+            case 6: score += 600; break;
+          }
+          counts[i] -= 3;
+        }
+      }
+
+      // 9. Remaining single 1s and 5s
+      score += counts[1] * 100;
+      score += counts[5] * 50;
+
+      return score;
+    }
+
 
 function calculateScoreAndCheckAllDiceScore(dice: number[]) {
   // Count frequencies of each die value
