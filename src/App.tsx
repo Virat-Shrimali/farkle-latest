@@ -65,6 +65,48 @@ function calculateScore(dice: number[]): number {
   return score;
 }
 
+// function calculateScoreAndCheckAllDiceScore(dice: number[]): { totalScore: number; allDiceScoring: boolean } {
+//   const counts: Record<number, number> = {};
+//   for (const die of dice) {
+//     counts[die] = (counts[die] || 0) + 1;
+//   }
+
+//   let totalScore = 0;
+//   let scoringDiceCount = 0;
+
+//   for (const [dieStr, count] of Object.entries(counts)) {
+//     const die = Number(dieStr);
+//     if (count >= 3) {
+//       if (die === 1) {
+//         totalScore += 300 * Math.pow(2, count - 3);
+//       } else {
+//         totalScore += die * 100 * Math.pow(2, count - 3);
+//       }
+//       scoringDiceCount += count;
+//     }
+//   }
+
+//   for (const [dieStr, count] of Object.entries(counts)) {
+//     const die = Number(dieStr);
+//     const leftover = count % 3;
+//     if (die === 1) {
+//       totalScore += 100 * leftover;
+//       scoringDiceCount += leftover;
+//     } else if (die === 5) {
+//       totalScore += 50 * leftover;
+//       scoringDiceCount += leftover;
+//     }
+//   }
+
+//   const allDiceScoring = (scoringDiceCount === dice.length);
+
+//   return {
+//     totalScore,
+//     allDiceScoring,
+//   };
+// }
+
+
 function calculateScoreAndCheckAllDiceScore(dice: number[]): { totalScore: number; allDiceScoring: boolean } {
   const counts: Record<number, number> = {};
   for (const die of dice) {
@@ -74,37 +116,93 @@ function calculateScoreAndCheckAllDiceScore(dice: number[]): { totalScore: numbe
   let totalScore = 0;
   let scoringDiceCount = 0;
 
-  for (const [dieStr, count] of Object.entries(counts)) {
-    const die = Number(dieStr);
-    if (count >= 3) {
-      if (die === 1) {
-        totalScore += 300 * Math.pow(2, count - 3);
-      } else {
-        totalScore += die * 100 * Math.pow(2, count - 3);
+  // (Your scoring logic is currently commented out — include it when needed)
+
+  let allDiceScoring = scoringDiceCount === dice.length;
+
+  if (!allDiceScoring && dice.length === 6) {
+    const values = Object.values(counts).sort((a, b) => b - a);
+    const uniqueDice = Object.keys(counts).length;
+
+    // Case 1: 6-dice straight (1–6)
+    if (uniqueDice === 6) {
+      return { totalScore, allDiceScoring: true };
+    }
+
+    // Case 2: 3 pairs
+    if (values.length === 3 && values.every(v => v === 2)) {
+      return { totalScore, allDiceScoring: true };
+    }
+
+    // Case 7: 5-of-a-kind + one 1 or 5
+if (values.includes(5)) {
+  const fiveOfKindDie = Number(Object.keys(counts).find(die => counts[+die] === 5)!);
+  const remaining = dice.filter(d => d !== fiveOfKindDie);
+  if (remaining.length === 1 && (remaining[0] === 1 || remaining[0] === 5)) {
+    return { totalScore, allDiceScoring: true };
+  }
+}
+
+
+    // Case 5: 4-of-a-kind + any pair (including 1s/5s or any matching values)
+if (values.includes(4)) {
+  const fourOfKindDie = Number(Object.keys(counts).find(die => counts[+die] === 4)!);
+  const remaining = dice.filter(d => d !== fourOfKindDie);
+
+  const remCounts: Record<number, number> = {};
+  for (const d of remaining) {
+    remCounts[d] = (remCounts[d] || 0) + 1;
+  }
+
+  const remValues = Object.values(remCounts);
+  if (remValues.length === 1 && remValues[0] === 2) {
+    return { totalScore, allDiceScoring: true }; // 4-of-a-kind + a pair of any die
+  }
+}
+
+
+    // Case 4: Two 3-of-a-kinds
+    if (values.filter(v => v === 3).length === 2) {
+      return { totalScore, allDiceScoring: true };
+    }
+
+    // Case 5: 4-of-a-kind + two 1s/5s
+    if (values.includes(4)) {
+      const fourOfKindDie = Number(Object.keys(counts).find(die => counts[+die] === 4)!);
+      const remaining = dice.filter(d => d !== fourOfKindDie);
+      if (remaining.length === 2 && remaining.every(d => d === 1 || d === 5)) {
+        return { totalScore, allDiceScoring: true };
       }
-      scoringDiceCount += count;
+    }
+
+    // Case 6: 3-of-a-kind + another 3-of-a-kind or 1s/5s
+    if (values.includes(3)) {
+      const tripletDie = Number(Object.keys(counts).find(die => counts[+die] === 3)!);
+      const remaining = dice.filter(d => d !== tripletDie);
+
+      const remCounts: Record<number, number> = {};
+      for (const d of remaining) {
+        remCounts[d] = (remCounts[d] || 0) + 1;
+      }
+
+      const remValues = Object.values(remCounts);
+      if (remValues.includes(3)) {
+        return { totalScore, allDiceScoring: true }; // two triplets
+      } else {
+        const scoringRem = remaining.filter(d => d === 1 || d === 5);
+        if (scoringRem.length === remaining.length) {
+          return { totalScore, allDiceScoring: true }; // remaining all scoring
+        }
+      }
     }
   }
-
-  for (const [dieStr, count] of Object.entries(counts)) {
-    const die = Number(dieStr);
-    const leftover = count % 3;
-    if (die === 1) {
-      totalScore += 100 * leftover;
-      scoringDiceCount += leftover;
-    } else if (die === 5) {
-      totalScore += 50 * leftover;
-      scoringDiceCount += leftover;
-    }
-  }
-
-  const allDiceScoring = (scoringDiceCount === dice.length);
 
   return {
     totalScore,
     allDiceScoring,
   };
 }
+
 
 const getSubsets = (arr: number[]): number[][] => {
   const result: number[][] = [];
