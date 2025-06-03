@@ -66,95 +66,85 @@ function calculateScore(dice: number[]): number {
 }
 
 function calculateScoreAndCheckAllDiceScore(dice: number[]): { totalScore: number; allDiceScoring: boolean } {
-  const counts: Record<number, number> = {};
-  for (const die of dice) {
-    counts[die] = (counts[die] || 0) + 1;
-  }
+  if (!dice || dice.length === 0) return { totalScore: 0, allDiceScoring: true };
+  if (dice.some(d => d < 1 || d > 6)) return { totalScore: 0, allDiceScoring: false };
+
+  const counts: number[] = Array(7).fill(0);
+  dice.forEach((d: number) => counts[d]++);
 
   let totalScore = 0;
   let scoringDiceCount = 0;
+  const initialCounts = [...counts];
 
-  let allDiceScoring = scoringDiceCount === dice.length;
+  // 1. Straight 1-6
+  if (dice.length === 6 && counts.slice(1).every(c => c === 1)) {
+    return { totalScore: 1500, allDiceScoring: true };
+  }
 
-  if (!allDiceScoring && dice.length === 6) {
-    const values = Object.values(counts).sort((a, b) => b - a);
-    const uniqueDice = Object.keys(counts).length;
+  // 2. Six of a kind
+  const sixOfKind = counts.findIndex(c => c === 6);
+  if (sixOfKind !== -1) {
+    return { totalScore: 3000, allDiceScoring: true };
+  }
 
-    // Case 1: 6-dice straight (1–6)
-    if (uniqueDice === 6) {
+  // 3. Five of a kind
+  const fiveOfKind = counts.findIndex(c => c === 5);
+  if (fiveOfKind !== -1) {
+    const remainingDie = dice.find(d => d !== fiveOfKind);
+    if (remainingDie === 1 || remainingDie === 5) {
+      totalScore = 2000 + (remainingDie === 1 ? 100 : 50);
       return { totalScore, allDiceScoring: true };
     }
+    return { totalScore: 2000, allDiceScoring: dice.length === 5 };
+  }
 
-    // Case 2: 3 pairs
-    if (values.length === 3 && values.every(v => v === 2)) {
-      return { totalScore, allDiceScoring: true };
-    }
+  // 4. Two triplets
+  if (counts.filter(c => c === 3).length === 2) {
+    return { totalScore: 2500, allDiceScoring: true };
+  }
 
-    // Case 7: 5-of-a-kind + one 1 or 5
-    if (values.includes(5)) {
-      const fiveOfKindDie = Number(Object.keys(counts).find(die => counts[+die] === 5)!);
-      const remaining = dice.filter(d => d !== fiveOfKindDie);
-      if (remaining.length === 1 && (remaining[0] === 1 || remaining[0] === 5)) {
-        return { totalScore, allDiceScoring: true };
-      }
-    }
+  // 5. Three pairs
+  if (counts.filter(c => c === 2).length === 3) {
+    return { totalScore: 1500, allDiceScoring: true };
+  }
 
-    // Case 5: 4-of-a-kind + any pair (including 1s/5s or any matching values)
-    if (values.includes(4)) {
-      const fourOfKindDie = Number(Object.keys(counts).find(die => counts[+die] === 4)!);
-      const remaining = dice.filter(d => d !== fourOfKindDie);
+  // 6. Four of a kind + a pair
+  const fourOfKind = counts.findIndex(c => c === 4);
+  if (fourOfKind !== -1 && counts.some(c => c === 2)) {
+    return { totalScore: 1500, allDiceScoring: true };
+  }
 
-      const remCounts: Record<number, number> = {};
-      for (const d of remaining) {
-        remCounts[d] = (remCounts[d] || 0) + 1;
-      }
-
-      const remValues = Object.values(remCounts);
-      if (remValues.length === 1 && remValues[0] === 2) {
-        return { totalScore, allDiceScoring: true }; // 4-of-a-kind + a pair of any die
-      }
-    }
-
-    // Case 4: Two 3-of-a-kinds
-    if (values.filter(v => v === 3).length === 2) {
-      return { totalScore, allDiceScoring: true };
-    }
-
-    // Case 5: 4-of-a-kind + two 1s/5s
-    if (values.includes(4)) {
-      const fourOfKindDie = Number(Object.keys(counts).find(die => counts[+die] === 4)!);
-      const remaining = dice.filter(d => d !== fourOfKindDie);
-      if (remaining.length === 2 && remaining.every(d => d === 1 || d === 5)) {
-        return { totalScore, allDiceScoring: true };
-      }
-    }
-
-    // Case 6: 3-of-a-kind + another 3-of-a-kind or 1s/5s
-    if (values.includes(3)) {
-      const tripletDie = Number(Object.keys(counts).find(die => counts[+die] === 3)!);
-      const remaining = dice.filter(d => d !== tripletDie);
-
-      const remCounts: Record<number, number> = {};
-      for (const d of remaining) {
-        remCounts[d] = (remCounts[d] || 0) + 1;
-      }
-
-      const remValues = Object.values(remCounts);
-      if (remValues.includes(3)) {
-        return { totalScore, allDiceScoring: true }; // two triplets
-      } else {
-        const scoringRem = remaining.filter(d => d === 1 || d === 5);
-        if (scoringRem.length === remaining.length) {
-          return { totalScore, allDiceScoring: true }; // remaining all scoring
-        }
-      }
+  // 7. Four of a kind (not combined with pair)
+  for (let i = 1; i <= 6; i++) {
+    if (counts[i] === 4) {
+      totalScore += 1000;
+      scoringDiceCount += 4;
+      counts[i] -= 4;
     }
   }
 
-  return {
-    totalScore,
-    allDiceScoring,
-  };
+  // 8. Three of a kind (priority: 6 to 1)
+  for (let i = 6; i >= 1; i--) {
+    if (counts[i] >= 3) {
+      switch (i) {
+        case 1: totalScore += 300; break;
+        case 2: totalScore += 200; break;
+        case 3: totalScore += 300; break;
+        case 4: totalScore += 400; break;
+        case 5: totalScore += 500; break;
+        case 6: totalScore += 600; break;
+      }
+      scoringDiceCount += 3;
+      counts[i] -= 3;
+    }
+  }
+
+  // 9. Single 1s and 5s
+  totalScore += counts[1] * 100;
+  totalScore += counts[5] * 50;
+  scoringDiceCount += counts[1] + counts[5];
+
+  return { totalScore, allDiceScoring: scoringDiceCount === dice.length };
 }
 
 const getSubsets = (arr: number[]): number[][] => {
