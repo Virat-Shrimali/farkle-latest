@@ -176,45 +176,45 @@ export default function App() {
   const [gameStarted, setGameStarted] = useState<boolean>(false);
 
   const rollDice = () => {
-    if (gameOver) return;
+  if (gameOver) return;
 
-    const newDice = dice.map((val, idx) =>
-      locked[idx] ? val : Math.ceil(Math.random() * 6)
-    );
+  const newDice = dice.map((val, idx) =>
+    locked[idx] ? val : Math.ceil(Math.random() * 6)
+  );
 
-    setDice(newDice);
-    setRolls(prev => prev + 1);
+  setDice(newDice);
+  setRolls(prev => prev + 1);
 
-    const allDiceInPlay = [...lockedDiceValues, ...newDice];
-    const allDiceLockedStatus = [
-      ...lockedDiceValues.map(() => true),
-      ...locked
-    ];
+  const allDiceInPlay = [...lockedDiceValues, ...newDice];
+  const allDiceLockedStatus = [
+    ...lockedDiceValues.map(() => true),
+    ...locked
+  ];
 
-    const lockedInCurrentRoll = newDice.filter((_, i) => locked[i]);
-    const base = [...lockedDiceValues, ...lockedInCurrentRoll];
-    const baseScore = calculateScore(base);
+  const lockedInCurrentRoll = newDice.filter((_, i) => locked[i]);
+  const base = [...lockedDiceValues, ...lockedInCurrentRoll];
+  const baseScore = calculateScore(base);
 
-    const unlockedIndices = newDice
-      .map((_, i) => i)
-      .filter(i => !locked[i]);
-    const subsets = getAllSubsets(unlockedIndices);
+  const unlockedIndices = newDice
+    .map((_, i) => i)
+    .filter(i => !locked[i]);
+  const subsets = getAllSubsets(unlockedIndices.length); // Fix: Pass correct length
 
-    const farkle = !subsets.some(subset => {
-      const testDice = subset.length > 0 ? [...base, ...subset.map(i => newDice[i])] : base;
-      const score = calculateScore(testDice);
-      return score > 0; // Any positive score prevents Farkle
-    }) && calculateScore(newDice) === 0; // Also check if new roll alone scores nothing
+  const farkle = !subsets.some(subset => {
+      if (subset.length === 0) return false;
+      const testDice = [...base, ...subset.map(i => newDice[i])];
+      return calculateScore(testDice) > baseScore;
+    });
 
-    if (farkle) {
-      const diceDisplay = allDiceInPlay.map((val, idx) =>
-        allDiceLockedStatus[idx] ? `[${val}]` : `${val}`
-      ).join(', ');
-      alert(`❌ Farkle! Dice: ${diceDisplay}\n(No scoring combination found.) Player ${currentPlayer}'s turn ends.`);
-      resetTurn();
-      return;
-    }
-  };
+  if (farkle) {
+    const diceDisplay = allDiceInPlay.map((val, idx) =>
+      allDiceLockedStatus[idx] ? `[${val}]` : `${val}`
+    ).join(', ');
+    alert(`❌ Farkle! Dice: ${diceDisplay}\n(No scoring combination found.) Player ${currentPlayer}'s turn ends.`);
+    resetTurn();
+    return;
+  }
+};
 
   const toggleLock = (idx: number) => {
     if (gameOver) return;
@@ -234,22 +234,20 @@ export default function App() {
   };
 
   const endTurn = () => {
-    if (gameOver) return;
+  if (gameOver) return;
 
-    setPlayerScores(prev => {
-      const newScores = { ...prev };
-      newScores[`player${currentPlayer}` as keyof typeof playerScores] += turnScore;
+  setPlayerScores({
+    ...playerScores,
+    [`player${currentPlayer}`]: playerScores[`player${currentPlayer}` as keyof typeof playerScores] + turnScore
+  });
 
-      if (newScores[`player${currentPlayer}` as keyof typeof playerScores] >= WINNING_SCORE) {
-        setGameOver(true);
-        setWinner(currentPlayer);
-      }
+  if (playerScores[`player${currentPlayer}` as keyof typeof playerScores] + turnScore >= WINNING_SCORE) {
+    setGameOver(true);
+    setWinner(currentPlayer);
+  }
 
-      return newScores;
-    });
-
-    resetTurn();
-  };
+  resetTurn();
+};
 
   const canLock = (): boolean => {
     if (gameOver) return false;
@@ -353,51 +351,43 @@ export default function App() {
   };
 
   const aiPlayTurn = () => {
-    if (gameOver || currentPlayer !== 2) return;
+  if (gameOver || currentPlayer !== 2) return;
 
-    if (canRoll()) {
+  if (canRoll()) {
+    setTimeout(() => {
+      rollDice();
       setTimeout(() => {
-        rollDice();
-        setTimeout(() => {
-          const { subset, score } = findBestSubsetToLock();
-          if (subset) {
-            const remainingDiceCount = dice.length - subset.length;
-            if (shouldEndTurn(score, remainingDiceCount)) {
-              endTurn();
-            } else {
-              setLocked(prev => {
-                const newLocked = Array(6).fill(false);
-                subset.forEach(i => (newLocked[i] = true));
-                return newLocked;
-              });
-              confirmLock();
-              setTimeout(aiPlayTurn, 1000);
-            }
-          } else {
+        const { subset, score } = findBestSubsetToLock();
+        if (subset) {
+          const remainingDiceCount = dice.length - subset.length;
+          if (shouldEndTurn(score, remainingDiceCount)) {
             endTurn();
+          } else {
+            setLocked(Array(6).fill(false).map((_, i) => subset.includes(i)));
+            confirmLock();
+            setTimeout(aiPlayTurn, 1000);
           }
-        }, 1000);
-      }, 1000);
-    } else {
-      const { subset, score } = findBestSubsetToLock();
-      if (subset) {
-        const remainingDiceCount = dice.length - subset.length;
-        if (shouldEndTurn(score, remainingDiceCount)) {
-          endTurn();
         } else {
-          setLocked(prev => {
-            const newLocked = Array(6).fill(false);
-            subset.forEach(i => (newLocked[i] = true));
-            return newLocked;
-          });
-          confirmLock();
-          setTimeout(aiPlayTurn, 1000);
+          endTurn();
         }
-      } else {
+      }, 1000);
+    }, 1000);
+  } else {
+    const { subset, score } = findBestSubsetToLock();
+    if (subset) {
+      const remainingDiceCount = dice.length - subset.length;
+      if (shouldEndTurn(score, remainingDiceCount)) {
         endTurn();
+      } else {
+        setLocked(Array(6).fill(false).map((_, i) => subset.includes(i)));
+        confirmLock();
+        setTimeout(aiPlayTurn, 1000);
       }
+    } else {
+      endTurn();
     }
-  };
+  }
+};
 
   useEffect(() => {
     if (isVsComputer && currentPlayer === 2 && gameStarted && !gameOver) {
