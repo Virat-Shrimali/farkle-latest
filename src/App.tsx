@@ -1,35 +1,23 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
+const WINNING_SCORE = 10000;
 const MAX_ROLLS = 3;
 
-// Input: dice is an array of 6 dice, e.g. [1,1,5,1,6,6]
 function calculateScore(dice: number[]): number {
   if (dice.length === 0) return 0;
 
   let counts: number[] = Array(7).fill(0);
   dice.forEach((d: number) => counts[d]++);
 
-  // 1. Straight 1-6
   if (counts.slice(1).every(c => c === 1)) return 1500;
-
-  // 2. Six of a kind
   if (counts.some(c => c === 6)) return 3000;
-
-  // 3. Five of a kind
   if (counts.some(c => c === 5)) return 2000;
-
-  // 4. Two triplets
   if (counts.filter(c => c === 3).length === 2) return 2500;
-
-  // 5. Three pairs
   if (counts.filter(c => c === 2).length === 3) return 1500;
-
-  // 6. Four of a kind + a pair
   if (counts.some(c => c === 4) && counts.some(c => c === 2)) return 1500;
 
   let score = 0;
 
-  // 7. Handle 6, 5, 4 of a kind
   for (let i = 1; i <= 6; i++) {
     if (counts[i] >= 6) {
       score += 3000;
@@ -43,7 +31,6 @@ function calculateScore(dice: number[]): number {
     }
   }
 
-  // 8. Three of a kind (priority: 6 to 1) — must be >= 3
   for (let i = 6; i >= 1; i--) {
     if (counts[i] >= 3) {
       switch (i) {
@@ -58,7 +45,6 @@ function calculateScore(dice: number[]): number {
     }
   }
 
-  // 9. Remaining single 1s and 5s
   score += counts[1] * 100;
   score += counts[5] * 50;
 
@@ -74,20 +60,16 @@ function calculateScoreAndCheckAllDiceScore(dice: number[]): { totalScore: numbe
 
   let totalScore = 0;
   let scoringDiceCount = 0;
-  // const initialCounts = [...counts];
 
-  // 1. Straight 1-6
   if (dice.length === 6 && counts.slice(1).every(c => c === 1)) {
     return { totalScore: 1500, allDiceScoring: true };
   }
 
-  // 2. Six of a kind
   const sixOfKind = counts.findIndex(c => c === 6);
   if (sixOfKind !== -1) {
     return { totalScore: 3000, allDiceScoring: true };
   }
 
-  // 3. Five of a kind
   const fiveOfKind = counts.findIndex(c => c === 5);
   if (fiveOfKind !== -1) {
     const remainingDie = dice.find(d => d !== fiveOfKind);
@@ -98,23 +80,19 @@ function calculateScoreAndCheckAllDiceScore(dice: number[]): { totalScore: numbe
     return { totalScore: 2000, allDiceScoring: dice.length === 5 };
   }
 
-  // 4. Two triplets
   if (counts.filter(c => c === 3).length === 2) {
     return { totalScore: 2500, allDiceScoring: true };
   }
 
-  // 5. Three pairs
   if (counts.filter(c => c === 2).length === 3) {
     return { totalScore: 1500, allDiceScoring: true };
   }
 
-  // 6. Four of a kind + a pair
   const fourOfKind = counts.findIndex(c => c === 4);
   if (fourOfKind !== -1 && counts.some(c => c === 2)) {
     return { totalScore: 1500, allDiceScoring: true };
   }
 
-  // 7. Four of a kind (not combined with pair)
   for (let i = 1; i <= 6; i++) {
     if (counts[i] === 4) {
       totalScore += 1000;
@@ -123,7 +101,6 @@ function calculateScoreAndCheckAllDiceScore(dice: number[]): { totalScore: numbe
     }
   }
 
-  // 8. Three of a kind (priority: 6 to 1)
   for (let i = 6; i >= 1; i--) {
     if (counts[i] >= 3) {
       switch (i) {
@@ -139,7 +116,6 @@ function calculateScoreAndCheckAllDiceScore(dice: number[]): { totalScore: numbe
     }
   }
 
-  // 9. Single 1s and 5s
   totalScore += counts[1] * 100;
   totalScore += counts[5] * 50;
   scoringDiceCount += counts[1] + counts[5];
@@ -147,20 +123,17 @@ function calculateScoreAndCheckAllDiceScore(dice: number[]): { totalScore: numbe
   return { totalScore, allDiceScoring: scoringDiceCount === dice.length };
 }
 
-const getSubsets = (arr: number[]): number[][] => {
-  const result: number[][] = [];
-  const n = arr.length;
-
+function getAllSubsets(n: number): number[][] {
+  const subsets: number[][] = [];
   for (let i = 1; i < (1 << n); i++) {
     const subset: number[] = [];
     for (let j = 0; j < n; j++) {
-      if (i & (1 << j)) subset.push(arr[j]);
+      if (i & (1 << j)) subset.push(j);
     }
-    result.push(subset);
+    subsets.push(subset);
   }
-
-  return result;
-};
+  return subsets;
+}
 
 interface DiceProps {
   value: number;
@@ -199,8 +172,8 @@ export default function App() {
   const [hasLockedThisTurn, setHasLockedThisTurn] = useState<boolean>(false);
   const [gameOver, setGameOver] = useState<boolean>(false);
   const [winner, setWinner] = useState<number | null>(null);
-
-  const WINNING_SCORE = 10000;
+  const [isVsComputer, setIsVsComputer] = useState<boolean>(false);
+  const [gameStarted, setGameStarted] = useState<boolean>(false);
 
   const rollDice = () => {
     if (gameOver) return;
@@ -225,13 +198,13 @@ export default function App() {
     const unlockedIndices = newDice
       .map((_, i) => i)
       .filter(i => !locked[i]);
-    const subsets = getSubsets(unlockedIndices);
+    const subsets = getAllSubsets(unlockedIndices);
 
     const farkle = !subsets.some(subset => {
-      if (subset.length === 0) return false;
-      const testDice = [...base, ...subset.map(i => newDice[i])];
-      return calculateScore(testDice) > baseScore;
-    });
+      const testDice = subset.length > 0 ? [...base, ...subset.map(i => newDice[i])] : base;
+      const score = calculateScore(testDice);
+      return score > 0; // Any positive score prevents Farkle
+    }) && calculateScore(newDice) === 0; // Also check if new roll alone scores nothing
 
     if (farkle) {
       const diceDisplay = allDiceInPlay.map((val, idx) =>
@@ -332,7 +305,6 @@ export default function App() {
     setTurnScore(updatedScore);
     setHasLockedThisTurn(true);
 
-    // Check if all dice are locked (no dice left to roll)
     if (newDice.length === 0) {
       setPlayerScores(prev => {
         const newScores = { ...prev };
@@ -355,6 +327,84 @@ export default function App() {
     return !gameOver && (rolls === 0 || hasLockedThisTurn);
   };
 
+  const findBestSubsetToLock = (): { subset: number[] | null; score: number } => {
+    const allSubsets = getAllSubsets(dice.length);
+    let maxScore = turnScore;
+    let bestSubset: number[] | null = null;
+
+    for (const subset of allSubsets) {
+      const subsetDice = subset.map(i => dice[i]);
+      const candidateLocked = [...lockedDiceValues, ...subsetDice];
+      const candidateScore = calculateScore(candidateLocked);
+      if (candidateScore > maxScore) {
+        maxScore = candidateScore;
+        bestSubset = subset;
+      }
+    }
+
+    return { subset: bestSubset, score: maxScore };
+  };
+
+  const shouldEndTurn = (turnScore: number, remainingDiceCount: number): boolean => {
+    if (turnScore >= 500 && remainingDiceCount <= 2) return true;
+    if (turnScore >= 750 && remainingDiceCount === 3) return true;
+    if (turnScore >= 1000 && remainingDiceCount >= 4) return true;
+    return false;
+  };
+
+  const aiPlayTurn = () => {
+    if (gameOver || currentPlayer !== 2) return;
+
+    if (canRoll()) {
+      setTimeout(() => {
+        rollDice();
+        setTimeout(() => {
+          const { subset, score } = findBestSubsetToLock();
+          if (subset) {
+            const remainingDiceCount = dice.length - subset.length;
+            if (shouldEndTurn(score, remainingDiceCount)) {
+              endTurn();
+            } else {
+              setLocked(prev => {
+                const newLocked = Array(6).fill(false);
+                subset.forEach(i => (newLocked[i] = true));
+                return newLocked;
+              });
+              confirmLock();
+              setTimeout(aiPlayTurn, 1000);
+            }
+          } else {
+            endTurn();
+          }
+        }, 1000);
+      }, 1000);
+    } else {
+      const { subset, score } = findBestSubsetToLock();
+      if (subset) {
+        const remainingDiceCount = dice.length - subset.length;
+        if (shouldEndTurn(score, remainingDiceCount)) {
+          endTurn();
+        } else {
+          setLocked(prev => {
+            const newLocked = Array(6).fill(false);
+            subset.forEach(i => (newLocked[i] = true));
+            return newLocked;
+          });
+          confirmLock();
+          setTimeout(aiPlayTurn, 1000);
+        }
+      } else {
+        endTurn();
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (isVsComputer && currentPlayer === 2 && gameStarted && !gameOver) {
+      aiPlayTurn();
+    }
+  }, [currentPlayer, gameStarted, gameOver]);
+
   return (
     <div
       style={{
@@ -365,121 +415,153 @@ export default function App() {
         fontFamily: 'Arial, sans-serif',
       }}
     >
-      <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-        🎲 Farkle Game
-      </h1>
-
-      {gameOver && (
-        <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#dc2626', marginBottom: '1rem' }}>
-          Game Over! Player {winner} Wins!
-        </p>
+      {!gameStarted ? (
+        <div>
+          <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+            🎲 Farkle Game
+          </h1>
+          <button
+            onClick={() => { setIsVsComputer(false); setGameStarted(true); }}
+            style={{
+              padding: '0.5rem 1rem',
+              margin: '0.5rem',
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.375rem',
+              cursor: 'pointer',
+            }}
+          >
+            Start 2 Player Game
+          </button>
+          <button
+            onClick={() => { setIsVsComputer(true); setGameStarted(true); }}
+            style={{
+              padding: '0.5rem 1rem',
+              margin: '0.5rem',
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.375rem',
+              cursor: 'pointer',
+            }}
+          >
+            Start vs Computer Game
+          </button>
+        </div>
+      ) : (
+        <>
+          <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+            🎲 Farkle Game
+          </h1>
+          {gameOver && (
+            <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#dc2626', marginBottom: '1rem' }}>
+              Game Over! Player {winner} Wins!
+            </p>
+          )}
+          <p style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+            Current Player: Player {currentPlayer} {isVsComputer && currentPlayer === 2 ? '(Computer)' : ''}
+          </p>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              marginBottom: '1rem',
+            }}
+          >
+            {dice.map((value, idx) => (
+              <span key={idx}>
+                <Dice value={value} locked={locked[idx]} onClick={() => toggleLock(idx)} />
+              </span>
+            ))}
+          </div>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginTop: '1rem' }}>
+            Locked Dice
+          </h2>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              marginBottom: '1rem',
+            }}
+          >
+            {lockedDiceValues.map((value, idx) => (
+              <Dice key={`locked-${idx}`} value={value} locked={true} />
+            ))}
+          </div>
+          <p style={{ fontSize: '1.125rem' }}>Rolls this turn: {rolls} / {MAX_ROLLS}</p>
+          <p style={{ fontSize: '1.125rem', fontWeight: '600' }}>Turn Score: {turnScore}</p>
+          <p style={{ fontSize: '1.125rem', fontWeight: 'bold', color: '#15803d' }}>
+            Player 1 Score: {playerScores.player1}
+          </p>
+          <p style={{ fontSize: '1.125rem', fontWeight: 'bold', color: '#15803d' }}>
+            Player 2 Score: {playerScores.player2}
+          </p>
+          <div style={{ marginTop: '1.5rem' }}>
+            <button
+              onClick={rollDice}
+              disabled={rolls >= MAX_ROLLS || !canRoll()}
+              style={{
+                padding: '0.5rem 1rem',
+                marginRight: '0.5rem',
+                backgroundColor: rolls >= MAX_ROLLS || !canRoll() ? '#94a3b8' : '#3b82f6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.375rem',
+                cursor: rolls >= MAX_ROLLS || !canRoll() ? 'not-allowed' : 'pointer',
+              }}
+            >
+              Roll Dice
+            </button>
+            <button
+              onClick={endTurn}
+              style={{
+                padding: '0.5rem 1rem',
+                marginRight: '0.5rem',
+                backgroundColor: '#22c55e',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.375rem',
+                cursor: gameOver ? 'not-allowed' : 'pointer',
+              }}
+              disabled={gameOver}
+            >
+              End Turn
+            </button>
+            <button
+              onClick={resetTurn}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: '#ef4444',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.375rem',
+                cursor: gameOver ? 'not-allowed' : 'pointer',
+              }}
+              disabled={gameOver}
+            >
+              Reset Turn
+            </button>
+            <button
+              onClick={confirmLock}
+              disabled={!canLock()}
+              style={{
+                padding: '0.5rem 1rem',
+                marginRight: '0.5rem',
+                backgroundColor: canLock() ? '#f59e0b' : '#d1d5db',
+                color: canLock() ? 'white' : '#6b7280',
+                border: 'none',
+                borderRadius: '0.375rem',
+                cursor: canLock() ? 'pointer' : 'not-allowed',
+              }}
+            >
+              Lock Selected Dice
+            </button>
+          </div>
+        </>
       )}
-
-      <p style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-        Current Player: Player {currentPlayer}
-      </p>
-
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          flexWrap: 'wrap',
-          marginBottom: '1rem',
-        }}
-      >
-        {dice.map((value, idx) => (
-          <span key={idx}>
-            <Dice value={value} locked={locked[idx]} onClick={() => toggleLock(idx)} />
-          </span>
-        ))}
-      </div>
-
-      <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginTop: '1rem' }}>
-        Locked Dice
-      </h2>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          flexWrap: 'wrap',
-          marginBottom: '1rem',
-        }}
-      >
-        {lockedDiceValues.map((value, idx) => (
-          <Dice key={`locked-${idx}`} value={value} locked={true} />
-        ))}
-      </div>
-
-      <p style={{ fontSize: '1.125rem' }}>Rolls this turn: {rolls} / {MAX_ROLLS}</p>
-      <p style={{ fontSize: '1.125rem', fontWeight: '600' }}>Turn Score: {turnScore}</p>
-      <p style={{ fontSize: '1.125rem', fontWeight: 'bold', color: '#15803d' }}>
-        Player 1 Score: {playerScores.player1}
-      </p>
-      <p style={{ fontSize: '1.125rem', fontWeight: 'bold', color: '#15803d' }}>
-        Player 2 Score: {playerScores.player2}
-      </p>
-
-      <div style={{ marginTop: '1.5rem' }}>
-        <button
-          onClick={rollDice}
-          disabled={rolls >= MAX_ROLLS || !canRoll()}
-          style={{
-            padding: '0.5rem 1rem',
-            marginRight: '0.5rem',
-            backgroundColor: rolls >= MAX_ROLLS || !canRoll() ? '#94a3b8' : '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '0.375rem',
-            cursor: rolls >= MAX_ROLLS || !canRoll() ? 'not-allowed' : 'pointer',
-          }}
-        >
-          Roll Dice
-        </button>
-        <button
-          onClick={endTurn}
-          style={{
-            padding: '0.5rem 1rem',
-            marginRight: '0.5rem',
-            backgroundColor: '#22c55e',
-            color: 'white',
-            border: 'none',
-            borderRadius: '0.375rem',
-            cursor: gameOver ? 'not-allowed' : 'pointer',
-          }}
-          disabled={gameOver}
-        >
-          End Turn
-        </button>
-        <button
-          onClick={resetTurn}
-          style={{
-            padding: '0.5rem 1rem',
-            backgroundColor: '#ef4444',
-            color: 'white',
-            border: 'none',
-            borderRadius: '0.375rem',
-            cursor: gameOver ? 'not-allowed' : 'pointer',
-          }}
-          disabled={gameOver}
-        >
-          Reset Turn
-        </button>
-        <button
-          onClick={confirmLock}
-          disabled={!canLock()}
-          style={{
-            padding: '0.5rem 1rem',
-            marginRight: '0.5rem',
-            backgroundColor: canLock() ? '#f59e0b' : '#d1d5db',
-            color: canLock() ? 'white' : '#6b7280',
-            border: 'none',
-            borderRadius: '0.375rem',
-            cursor: canLock() ? 'pointer' : 'not-allowed',
-          }}
-        >
-          Lock Selected Dice
-        </button>
-      </div>
     </div>
   );
 }
