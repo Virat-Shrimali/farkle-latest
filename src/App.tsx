@@ -74,7 +74,7 @@ function calculateScoreAndCheckAllDiceScore(dice: number[]): { totalScore: numbe
 
   let totalScore = 0;
   let scoringDiceCount = 0;
-  const initialCounts = [...counts];
+  // const initialCounts = [...counts];
 
   // 1. Straight 1-6
   if (dice.length === 6 && counts.slice(1).every(c => c === 1)) {
