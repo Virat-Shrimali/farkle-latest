@@ -65,48 +65,6 @@ function calculateScore(dice: number[]): number {
   return score;
 }
 
-// function calculateScoreAndCheckAllDiceScore(dice: number[]): { totalScore: number; allDiceScoring: boolean } {
-//   const counts: Record<number, number> = {};
-//   for (const die of dice) {
-//     counts[die] = (counts[die] || 0) + 1;
-//   }
-
-//   let totalScore = 0;
-//   let scoringDiceCount = 0;
-
-//   for (const [dieStr, count] of Object.entries(counts)) {
-//     const die = Number(dieStr);
-//     if (count >= 3) {
-//       if (die === 1) {
-//         totalScore += 300 * Math.pow(2, count - 3);
-//       } else {
-//         totalScore += die * 100 * Math.pow(2, count - 3);
-//       }
-//       scoringDiceCount += count;
-//     }
-//   }
-
-//   for (const [dieStr, count] of Object.entries(counts)) {
-//     const die = Number(dieStr);
-//     const leftover = count % 3;
-//     if (die === 1) {
-//       totalScore += 100 * leftover;
-//       scoringDiceCount += leftover;
-//     } else if (die === 5) {
-//       totalScore += 50 * leftover;
-//       scoringDiceCount += leftover;
-//     }
-//   }
-
-//   const allDiceScoring = (scoringDiceCount === dice.length);
-
-//   return {
-//     totalScore,
-//     allDiceScoring,
-//   };
-// }
-
-
 function calculateScoreAndCheckAllDiceScore(dice: number[]): { totalScore: number; allDiceScoring: boolean } {
   const counts: Record<number, number> = {};
   for (const die of dice) {
@@ -115,8 +73,6 @@ function calculateScoreAndCheckAllDiceScore(dice: number[]): { totalScore: numbe
 
   let totalScore = 0;
   let scoringDiceCount = 0;
-
-  // (Your scoring logic is currently commented out — include it when needed)
 
   let allDiceScoring = scoringDiceCount === dice.length;
 
@@ -135,31 +91,29 @@ function calculateScoreAndCheckAllDiceScore(dice: number[]): { totalScore: numbe
     }
 
     // Case 7: 5-of-a-kind + one 1 or 5
-if (values.includes(5)) {
-  const fiveOfKindDie = Number(Object.keys(counts).find(die => counts[+die] === 5)!);
-  const remaining = dice.filter(d => d !== fiveOfKindDie);
-  if (remaining.length === 1 && (remaining[0] === 1 || remaining[0] === 5)) {
-    return { totalScore, allDiceScoring: true };
-  }
-}
-
+    if (values.includes(5)) {
+      const fiveOfKindDie = Number(Object.keys(counts).find(die => counts[+die] === 5)!);
+      const remaining = dice.filter(d => d !== fiveOfKindDie);
+      if (remaining.length === 1 && (remaining[0] === 1 || remaining[0] === 5)) {
+        return { totalScore, allDiceScoring: true };
+      }
+    }
 
     // Case 5: 4-of-a-kind + any pair (including 1s/5s or any matching values)
-if (values.includes(4)) {
-  const fourOfKindDie = Number(Object.keys(counts).find(die => counts[+die] === 4)!);
-  const remaining = dice.filter(d => d !== fourOfKindDie);
+    if (values.includes(4)) {
+      const fourOfKindDie = Number(Object.keys(counts).find(die => counts[+die] === 4)!);
+      const remaining = dice.filter(d => d !== fourOfKindDie);
 
-  const remCounts: Record<number, number> = {};
-  for (const d of remaining) {
-    remCounts[d] = (remCounts[d] || 0) + 1;
-  }
+      const remCounts: Record<number, number> = {};
+      for (const d of remaining) {
+        remCounts[d] = (remCounts[d] || 0) + 1;
+      }
 
-  const remValues = Object.values(remCounts);
-  if (remValues.length === 1 && remValues[0] === 2) {
-    return { totalScore, allDiceScoring: true }; // 4-of-a-kind + a pair of any die
-  }
-}
-
+      const remValues = Object.values(remCounts);
+      if (remValues.length === 1 && remValues[0] === 2) {
+        return { totalScore, allDiceScoring: true }; // 4-of-a-kind + a pair of any die
+      }
+    }
 
     // Case 4: Two 3-of-a-kinds
     if (values.filter(v => v === 3).length === 2) {
@@ -203,7 +157,6 @@ if (values.includes(4)) {
   };
 }
 
-
 const getSubsets = (arr: number[]): number[][] => {
   const result: number[][] = [];
   const n = arr.length;
@@ -218,58 +171,6 @@ const getSubsets = (arr: number[]): number[][] => {
 
   return result;
 };
-
-// function countScoringDice(dice: number[]): { count: number; contributing: boolean[] } {
-//   const counts = Array(7).fill(0);
-//   const contributing = Array(dice.length).fill(false);
-//   dice.forEach(d => counts[d]++);
-
-//   if (counts.slice(1).every(c => c === 1)) {
-//     return { count: 6, contributing: Array(6).fill(true) };
-//   }
-//   if (counts.filter(c => c === 2).length === 3) {
-//     return { count: 6, contributing: Array(6).fill(true) };
-//   }
-//   if (counts.filter(c => c === 3).length === 2) {
-//     return { count: 6, contributing: Array(6).fill(true) };
-//   }
-//   if (counts.includes(4) && counts.includes(2)) {
-//     return { count: 6, contributing: Array(6).fill(true) };
-//   }
-//   if (counts.includes(6)) {
-//     return { count: 6, contributing: Array(6).fill(true) };
-//   }
-
-//   const used = Array(dice.length).fill(false);
-
-//   for (let num = 1; num <= 6; num++) {
-//     if (counts[num] >= 3) {
-//       let usedCount = 0;
-//       for (let i = 0; i < dice.length && usedCount < 3; i++) {
-//         if (dice[i] === num && !used[i]) {
-//           contributing[i] = true;
-//           used[i] = true;
-//           usedCount++;
-//         }
-//       }
-//       counts[num] -= 3;
-//     }
-//   }
-
-//   [1, 5].forEach(num => {
-//     let remaining = counts[num];
-//     for (let i = 0; i < dice.length && remaining > 0; i++) {
-//       if (dice[i] === num && !used[i]) {
-//         contributing[i] = true;
-//         used[i] = true;
-//         remaining--;
-//       }
-//     }
-//   });
-
-//   const count = contributing.filter(Boolean).length;
-//   return { count, contributing };
-// }
 
 interface DiceProps {
   value: number;
@@ -390,20 +291,12 @@ export default function App() {
   const canLock = (): boolean => {
     if (gameOver) return false;
 
-    // Get dice selected for locking in the current roll
     const lockedVals = dice.filter((_, i) => locked[i]);
     if (lockedVals.length === 0) return false;
 
-    // Check if the selected dice contribute to the score for the current player's turn
-    // const { contributing } = countScoringDice(dice);
-    // const lockedAreScoring = dice.some((_, i) => locked[i] && contributing[i]);
-
-    // Calculate potential new score including previously locked dice for this turn
     const newLockedSet = [...lockedDiceValues, ...lockedVals];
     const newTotal = calculateScore(newLockedSet);
 
-    // Allow locking only if the combined score is greater than the current turn score
-    // and at least one selected die contributes to the score
     return newTotal > turnScore;
   };
 
@@ -448,6 +341,24 @@ export default function App() {
     setLocked(newLocked);
     setTurnScore(updatedScore);
     setHasLockedThisTurn(true);
+
+    // Check if all dice are locked (no dice left to roll)
+    if (newDice.length === 0) {
+      setPlayerScores(prev => {
+        const newScores = { ...prev };
+        newScores[`player${currentPlayer}` as keyof typeof playerScores] += updatedScore;
+
+        if (newScores[`player${currentPlayer}` as keyof typeof playerScores] >= WINNING_SCORE) {
+          setGameOver(true);
+          setWinner(currentPlayer);
+        }
+
+        return newScores;
+      });
+
+      alert(`🎉 All dice locked! Score of ${updatedScore} added to Player ${currentPlayer}. Switching to Player ${currentPlayer === 1 ? 2 : 1}.`);
+      resetTurn();
+    }
   };
 
   const canRoll = (): boolean => {
