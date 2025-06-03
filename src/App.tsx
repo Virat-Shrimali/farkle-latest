@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 
 const WINNING_SCORE = 10000;
 const MAX_ROLLS = 3;
-const MONTE_CARLO_SIMULATIONS = 1000; // Number of simulations for Monte Carlo
 
 function calculateScore(dice: number[]): number {
   if (dice.length === 0) return 0;
@@ -106,7 +105,7 @@ function calculateScoreAndCheckAllDiceScore(dice: number[]): { totalScore: numbe
     if (counts[i] >= 3) {
       switch (i) {
         case 1: totalScore += 300; break;
-        case 2: score += 200; break;
+        case 2: totalScore += 200; break;
         case 3: totalScore += 300; break;
         case 4: totalScore += 400; break;
         case 5: totalScore += 500; break;
@@ -162,41 +161,6 @@ const Dice: React.FC<DiceProps> = ({ value, locked, onClick }) => (
   </button>
 );
 
-// Simulate a single roll of n dice
-function simulateRoll(n: number): number[] {
-  return Array(n).fill(0).map(() => Math.ceil(Math.random() * 6));
-}
-
-// Estimate the expected value of continuing with remaining dice
-function simulateFutureRolls(remainingDiceCount: number, currentScore: number): { expectedScore: number; farkleProbability: number } {
-  let totalScore = 0;
-  let farkleCount = 0;
-
-  for (let i = 0; i < MONTE_CARLO_SIMULATIONS; i++) {
-    const newRoll = simulateRoll(remainingDiceCount);
-    const allSubsets = getAllSubsets(remainingDiceCount);
-    let bestSubsetScore = 0;
-
-    for (const subset of allSubsets) {
-      const subsetDice = subset.map(idx => newRoll[idx]);
-      const score = calculateScore(subsetDice);
-      if (score > bestSubsetScore) {
-        bestSubsetScore = score;
-      }
-    }
-
-    if (bestSubsetScore === 0) {
-      farkleCount++;
-    } else {
-      totalScore += bestSubsetScore;
-    }
-  }
-
-  const expectedScore = totalScore / MONTE_CARLO_SIMULATIONS;
-  const farkleProbability = farkleCount / MONTE_CARLO_SIMULATIONS;
-  return { expectedScore, farkleProbability };
-}
-
 export default function App() {
   const [dice, setDice] = useState<number[]>(Array(6).fill(1));
   const [lockedDiceValues, setLockedDiceValues] = useState<number[]>([]);
@@ -212,45 +176,45 @@ export default function App() {
   const [gameStarted, setGameStarted] = useState<boolean>(false);
 
   const rollDice = () => {
-    if (gameOver) return;
+  if (gameOver) return;
 
-    const newDice = dice.map((val, idx) =>
-      locked[idx] ? val : Math.ceil(Math.random() * 6)
-    );
+  const newDice = dice.map((val, idx) =>
+    locked[idx] ? val : Math.ceil(Math.random() * 6)
+  );
 
-    setDice(newDice);
-    setRolls(prev => prev + 1);
+  setDice(newDice);
+  setRolls(prev => prev + 1);
 
-    const allDiceInPlay = [...lockedDiceValues, ...newDice];
-    const allDiceLockedStatus = [
-      ...lockedDiceValues.map(() => true),
-      ...locked
-    ];
+  const allDiceInPlay = [...lockedDiceValues, ...newDice];
+  const allDiceLockedStatus = [
+    ...lockedDiceValues.map(() => true),
+    ...locked
+  ];
 
-    const lockedInCurrentRoll = newDice.filter((_, i) => locked[i]);
-    const base = [...lockedDiceValues, ...lockedInCurrentRoll];
-    const baseScore = calculateScore(base);
+  const lockedInCurrentRoll = newDice.filter((_, i) => locked[i]);
+  const base = [...lockedDiceValues, ...lockedInCurrentRoll];
+  const baseScore = calculateScore(base);
 
-    const unlockedIndices = newDice
-      .map((_, i) => i)
-      .filter(i => !locked[i]);
-    const subsets = getAllSubsets(unlockedIndices.length);
+  const unlockedIndices = newDice
+    .map((_, i) => i)
+    .filter(i => !locked[i]);
+  const subsets = getAllSubsets(unlockedIndices.length); // Fix: Pass correct length
 
-    const farkle = !subsets.some(subset => {
+  const farkle = !subsets.some(subset => {
       if (subset.length === 0) return false;
       const testDice = [...base, ...subset.map(i => newDice[i])];
       return calculateScore(testDice) > baseScore;
     });
 
-    if (farkle) {
-      const diceDisplay = allDiceInPlay.map((val, idx) =>
-        allDiceLockedStatus[idx] ? `[${val}]` : `${val}`
-      ).join(', ');
-      alert(`❌ Farkle! Dice: ${diceDisplay}\n(No scoring combination found.) Player ${currentPlayer}'s turn ends.`);
-      resetTurn();
-      return;
-    }
-  };
+  if (farkle) {
+    const diceDisplay = allDiceInPlay.map((val, idx) =>
+      allDiceLockedStatus[idx] ? `[${val}]` : `${val}`
+    ).join(', ');
+    alert(`❌ Farkle! Dice: ${diceDisplay}\n(No scoring combination found.) Player ${currentPlayer}'s turn ends.`);
+    resetTurn();
+    return;
+  }
+};
 
   const toggleLock = (idx: number) => {
     if (gameOver) return;
@@ -270,20 +234,20 @@ export default function App() {
   };
 
   const endTurn = () => {
-    if (gameOver) return;
+  if (gameOver) return;
 
-    setPlayerScores({
-      ...playerScores,
-      [`player${currentPlayer}`]: playerScores[`player${currentPlayer}` as keyof typeof playerScores] + turnScore
-    });
+  setPlayerScores({
+    ...playerScores,
+    [`player${currentPlayer}`]: playerScores[`player${currentPlayer}` as keyof typeof playerScores] + turnScore
+  });
 
-    if (playerScores[`player${currentPlayer}` as keyof typeof playerScores] + turnScore >= WINNING_SCORE) {
-      setGameOver(true);
-      setWinner(currentPlayer);
-    }
+  if (playerScores[`player${currentPlayer}` as keyof typeof playerScores] + turnScore >= WINNING_SCORE) {
+    setGameOver(true);
+    setWinner(currentPlayer);
+  }
 
-    resetTurn();
-  };
+  resetTurn();
+};
 
   const canLock = (): boolean => {
     if (gameOver) return false;
@@ -361,60 +325,69 @@ export default function App() {
     return !gameOver && (rolls === 0 || hasLockedThisTurn);
   };
 
-  const findBestSubsetToLock = (): { subset: number[] | null; score: number; expectedValue: number } => {
+  const findBestSubsetToLock = (): { subset: number[] | null; score: number } => {
     const allSubsets = getAllSubsets(dice.length);
-    let maxExpectedValue = turnScore; // Baseline: end turn now
+    let maxScore = turnScore;
     let bestSubset: number[] | null = null;
-    let bestScore = turnScore;
 
     for (const subset of allSubsets) {
       const subsetDice = subset.map(i => dice[i]);
       const candidateLocked = [...lockedDiceValues, ...subsetDice];
       const candidateScore = calculateScore(candidateLocked);
-      if (candidateScore <= turnScore) continue; // Skip non-scoring subsets
-
-      const remainingDiceCount = dice.length - subset.length;
-      const { expectedScore, farkleProbability } = simulateFutureRolls(remainingDiceCount, candidateScore);
-      const expectedValue = (1 - farkleProbability) * (candidateScore + expectedScore);
-
-      if (expectedValue > maxExpectedValue) {
-        maxExpectedValue = expectedValue;
+      if (candidateScore > maxScore) {
+        maxScore = candidateScore;
         bestSubset = subset;
-        bestScore = candidateScore;
       }
     }
 
-    return { subset: bestSubset, score: bestScore, expectedValue: maxExpectedValue };
+    return { subset: bestSubset, score: maxScore };
+  };
+
+  const shouldEndTurn = (turnScore: number, remainingDiceCount: number): boolean => {
+    if (turnScore >= 500 && remainingDiceCount <= 2) return true;
+    if (turnScore >= 750 && remainingDiceCount === 3) return true;
+    if (turnScore >= 1000 && remainingDiceCount >= 4) return true;
+    return false;
   };
 
   const aiPlayTurn = () => {
-    if (gameOver || currentPlayer !== 2) return;
+  if (gameOver || currentPlayer !== 2) return;
 
-    if (canRoll()) {
+  if (canRoll()) {
+    setTimeout(() => {
+      rollDice();
       setTimeout(() => {
-        rollDice();
-        setTimeout(() => {
-          const { subset, score, expectedValue } = findBestSubsetToLock();
-          if (subset && expectedValue > turnScore + 300) { // Threshold to avoid overly conservative play
-            setLocked(Array(dice.length).fill(false).map((_, i) => subset.includes(i)));
+        const { subset, score } = findBestSubsetToLock();
+        if (subset) {
+          const remainingDiceCount = dice.length - subset.length;
+          if (shouldEndTurn(score, remainingDiceCount)) {
+            endTurn();
+          } else {
+            setLocked(Array(6).fill(false).map((_, i) => subset.includes(i)));
             confirmLock();
             setTimeout(aiPlayTurn, 1000);
-          } else {
-            endTurn();
           }
-        }, 1000);
+        } else {
+          endTurn();
+        }
       }, 1000);
-    } else {
-      const { subset, score, expectedValue } = findBestSubsetToLock();
-      if (subset && expectedValue > turnScore + 300) {
-        setLocked(Array(dice.length).fill(false).map((_, i) => subset.includes(i)));
+    }, 1000);
+  } else {
+    const { subset, score } = findBestSubsetToLock();
+    if (subset) {
+      const remainingDiceCount = dice.length - subset.length;
+      if (shouldEndTurn(score, remainingDiceCount)) {
+        endTurn();
+      } else {
+        setLocked(Array(6).fill(false).map((_, i) => subset.includes(i)));
         confirmLock();
         setTimeout(aiPlayTurn, 1000);
-      } else {
-        endTurn();
       }
+    } else {
+      endTurn();
     }
-  };
+  }
+};
 
   useEffect(() => {
     if (isVsComputer && currentPlayer === 2 && gameStarted && !gameOver) {
