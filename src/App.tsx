@@ -187,18 +187,29 @@ export default function App() {
     setDice(newDice);
     setRolls(prev => prev + 1);
 
-    const unlockedDice = newDice.filter((_, i) => !locked[i]);
-    const hasScoringDice = unlockedDice.some(die => {
-      if (die === 1 || die === 5) return true;
-      
-      const counts: Record<number, number> = {};
-      unlockedDice.forEach(d => {
-        counts[d] = (counts[d] || 0) + 1;
-      });
-      return Object.values(counts).some(count => count >= 3);
-    });
+    // Check for Farkle: No subset of unlocked dice increases the score
+    const unlockedIndices = newDice
+      .map((_, i) => i)
+      .filter(i => !locked[i]);
+    const unlockedDice = unlockedIndices.map(i => newDice[i]);
+    
+    // If no unlocked dice, no need to check for Farkle
+    if (unlockedDice.length === 0) return;
 
-    if (!hasScoringDice) {
+    const allSubsets = getAllSubsets(unlockedDice.length);
+    let hasScoringSubset = false;
+
+    for (const subset of allSubsets) {
+      const subsetDice = subset.map(i => unlockedDice[i]);
+      const candidateLocked = [...lockedDiceValues, ...subsetDice];
+      const candidateScore = calculateScore(candidateLocked);
+      if (candidateScore > turnScore) {
+        hasScoringSubset = true;
+        break;
+      }
+    }
+
+    if (!hasScoringSubset) {
       const diceDisplay = [...lockedDiceValues, ...newDice]
         .map((val, idx) => locked[idx] || idx >= dice.length ? `[${val}]` : `${val}`)
         .join(', ');
@@ -282,16 +293,15 @@ export default function App() {
     const isHotDiceRoll = allDiceScoring && allDice.length === DICE_COUNT;
 
     if (isHotDiceRoll) {
-      const totalTurnScore = updatedScore;
+      const totalTurnScore = turnScore + updatedScore;
       alert(`🔥 Hot dice! You locked all 6 dice for a score of ${updatedScore}.\nRolling 6 fresh dice...`);
 
-      const freshDice = Array(DICE_COUNT).fill(0);
-      setDice(freshDice);
       setLocked(Array(DICE_COUNT).fill(false));
       setLockedDiceValues([]);
       setHasLockedThisTurn(false);
       setTurnScore(totalTurnScore);
       setRolls(0);
+      setDice(Array(DICE_COUNT).fill(0));
       return;
     }
 
